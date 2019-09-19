@@ -10,6 +10,10 @@ namespace PracaInzynierska
     {
         static void Main(string[] args)
         {
+            using (MainWindow window = new MainWindow(800, 600, "Generacja Terenu"))
+            {
+                window.Run(60.0f);
+            }
         }
     }
 }
