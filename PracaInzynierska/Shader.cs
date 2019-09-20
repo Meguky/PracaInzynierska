@@ -1,4 +1,5 @@
-﻿using OpenTK.Graphics.ES20;
+﻿using OpenTK;
+using OpenTK.Graphics.ES20;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,7 +13,7 @@ namespace PracaInzynierska
     {
         public int Handle;
         private bool disposedValue = false;
-
+        private readonly Dictionary<string, int> uniformLocations;
         public Shader(string vertexPath, string fragmentPath)
         {
             int VertexShader;
@@ -63,6 +64,17 @@ namespace PracaInzynierska
             GL.DetachShader(Handle, FragmentShader);
             GL.DeleteShader(FragmentShader);
             GL.DeleteShader(VertexShader);
+
+            GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out var numberOfUniforms);
+
+            uniformLocations = new Dictionary<string, int>();
+
+            for (var i = 0; i < numberOfUniforms; i++)
+            {
+                var key = GL.GetActiveUniform(Handle, i, out _, out _);
+                var location = GL.GetUniformLocation(Handle, key);
+                uniformLocations.Add(key, location);
+            }
         }
 
         public void Dispose()
@@ -93,6 +105,30 @@ namespace PracaInzynierska
         public int GetAttribLocation(string attribName)
         {
             return GL.GetAttribLocation(Handle, attribName);
+        }
+
+        public void SetInt(string name, int data)
+        {
+            GL.UseProgram(Handle);
+            GL.Uniform1(uniformLocations[name], data);
+        }
+
+        public void SetFloat(string name, float data)
+        {
+            GL.UseProgram(Handle);
+            GL.Uniform1(uniformLocations[name], data);
+        }
+
+        public void SetMatrix4(string name, Matrix4 data)
+        {
+            GL.UseProgram(Handle);
+            GL.UniformMatrix4(uniformLocations[name], true, ref data);
+        }
+
+        public void SetVector3(string name, Vector3 data)
+        {
+            GL.UseProgram(Handle);
+            GL.Uniform3(uniformLocations[name], data);
         }
     }
 }
