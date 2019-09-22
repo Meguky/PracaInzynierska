@@ -26,12 +26,6 @@ namespace PracaInzynierska
             -0.5f,  0.5f, 0.0f, 0.0f, 1.0f  // top left
         };
 
-        float[] texCoords = {
-            0.0f, 0.0f,
-            1.0f, 0.0f,
-            0.5f, 1.0f
-        };
-
         int vertexBufferObject;
         int vertexArrayObject;
         int elementBufferObject;
