@@ -41,6 +41,7 @@ namespace PracaInzynierska
         float time;
         bool firstMove = true;
         Vector2 lastPos;
+        Vector4 color = new Vector4(1f,1f,1f,1f);
         public MainWindow(int width, int height, string title) : base(width,height,GraphicsMode.Default, title) { }
 
         protected override void OnLoad(EventArgs e)
@@ -49,6 +50,7 @@ namespace PracaInzynierska
             GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
             GL.Enable(EnableCap.DepthTest);
+            //GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
 
             vertexBufferObject = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferObject);
@@ -79,22 +81,31 @@ namespace PracaInzynierska
             camera = new Camera(Vector3.UnitZ * 3, Width / (float)Height);
 
             CursorVisible = false;
-
+            GL.BindVertexArray(0);
             base.OnLoad(e);
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             time += 4.0f * (float)e.Time;
-
+            
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             texture.Use();
             shader.Use();
             GL.BindVertexArray(vertexArrayObject);
-            GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
+            Matrix4 model;
+            for (int i = 0; i < 50; i++)
+            {
+                model = Matrix4.Identity * Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(time * 50 + i*5));
+                model *= Matrix4.CreateTranslation(new Vector3(i + 1, 0f, 0f));
+                shader.SetMatrix4("model", model);
+                GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
+            }
 
-            var model = Matrix4.Identity * Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(time));
-            shader.SetMatrix4("model", model);
+
+            Console.WriteLine(color);
+
+            shader.SetVector4("lightColor", color);
             shader.SetMatrix4("view", camera.GetViewMatrix());
             shader.SetMatrix4("projection", camera.GetProjectionMatrix());
 
@@ -142,6 +153,10 @@ namespace PracaInzynierska
                 camera.Position += camera.up * camera.speed * (float)e.Time;
             if (input.IsKeyDown(Key.LShift))
                 camera.Position -= camera.up * camera.speed * (float)e.Time;
+            if (input.IsKeyDown(Key.E))
+                camera.speed += 0.5f;
+            if (input.IsKeyDown(Key.Q))
+                camera.speed -= 0.5f;
 
             var mouse = Mouse.GetState();
 
