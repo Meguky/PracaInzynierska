@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PracaInzynierska
 {
-    public class Vertex : IEquatable<Vertex>
+    public struct Vertex : IEquatable<Vertex>
     {
         public float X { get; set; }
         public float Y { get; set; }
@@ -21,7 +21,7 @@ namespace PracaInzynierska
 
         public bool Equals(Vertex other)
         {
-            if(other.X != this.X || other.Y != this.Y || other.Z != this.Z)
+            if(other.X != X || other.Y != Y || other.Z != Z)
             {
                 return false;
             }
