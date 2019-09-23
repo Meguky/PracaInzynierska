@@ -9,6 +9,6 @@ uniform vec4 lightColor;
 
 void main()
 {
-    outputColor = texture(texture0, texCoord) * lightColor;
-	//outputColor = lightColor;
+    //outputColor = texture(texture0, texCoord) * lightColor;
+	outputColor = lightColor;
 }

@@ -5,6 +5,7 @@ using OpenTK.Input;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -12,20 +13,6 @@ namespace PracaInzynierska
 {
     class MainWindow : GameWindow
     {
-
-
-        uint[] indices = {
-            0, 1, 3,
-            1, 2, 3
-        };
-
-        float[] vertices = {
-             0.5f,  0.5f, 0.0f, 1.0f, 1.0f, // top right
-             0.5f, -0.5f, 0.0f, 1.0f, 0.0f, // bottom right
-            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, // bottom left
-            -0.5f,  0.5f, 0.0f, 0.0f, 1.0f  // top left
-        };
-
         int vertexBufferObject;
         int vertexArrayObject;
         int elementBufferObject;
@@ -36,41 +23,49 @@ namespace PracaInzynierska
         bool firstMove = true;
         Vector2 lastPos;
         Vector4 color = new Vector4(1f,1f,1f,1f);
+        private Mesh mesh;
+        private uint resolution = 10;
+        private int size = 10;
+
         public MainWindow(int width, int height, string title) : base(width,height,GraphicsMode.Default, title) { }
 
         protected override void OnLoad(EventArgs e)
         {
+            vertexArrayObject = GL.GenVertexArray();
 
             GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
             GL.Enable(EnableCap.DepthTest);
-            //GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
+
+            mesh = new Mesh();
+
+            mesh.generateMesh(resolution,size);
 
             vertexBufferObject = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferObject);
-            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, mesh.getVertices().Length * Marshal.SizeOf(typeof(Vertex)), mesh.getVertices(), BufferUsageHint.StaticDraw);
 
             elementBufferObject = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
-            GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ElementArrayBuffer, mesh.getIndices().Length * sizeof(uint), mesh.getIndices(), BufferUsageHint.StaticDraw);
 
             shader = new Shader("../../Shaders/shader.vert", "../../Shaders/shader.frag");
             shader.Use();
 
-            texture = new Texture("../../container.png");
-            texture.Use();
+            //texture = new Texture("../../container.png");
+            //texture.Use();
 
-            vertexArrayObject = GL.GenVertexArray();
             GL.BindVertexArray(vertexArrayObject);
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferObject);
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
 
             GL.EnableVertexAttribArray(shader.GetAttribLocation("aPosition"));
-            GL.VertexAttribPointer(shader.GetAttribLocation("aPosition"), 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
+            GL.VertexAttribPointer(shader.GetAttribLocation("aPosition"), 3, VertexAttribPointerType.Float, false, Marshal.SizeOf(typeof(Vertex)), 0);
 
-            GL.EnableVertexAttribArray(shader.GetAttribLocation("aTexCoord"));
-            GL.VertexAttribPointer(shader.GetAttribLocation("aTexCoord"), 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
+            //GL.EnableVertexAttribArray(shader.GetAttribLocation("aTexCoord"));
+            //GL.VertexAttribPointer(shader.GetAttribLocation("aTexCoord"), 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
 
             camera = new Camera(Vector3.UnitZ * 3, Width / (float)Height);
 
@@ -84,20 +79,17 @@ namespace PracaInzynierska
             time += 4.0f * (float)e.Time;
             
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            texture.Use();
+            //texture.Use();
             shader.Use();
             GL.BindVertexArray(vertexArrayObject);
             Matrix4 model;
-            for (int i = 0; i < 50; i++)
+
             {
-                model = Matrix4.Identity * Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(time * 50 + i*5));
-                model *= Matrix4.CreateTranslation(new Vector3(i + 1, 0f, 0f));
+                //model = Matrix4.Identity * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(time * 50 + i * 5));
+                model = Matrix4.Identity;
                 shader.SetMatrix4("model", model);
-                GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
+                GL.DrawElements(PrimitiveType.Triangles, mesh.getIndices().Length, DrawElementsType.UnsignedInt, 0);
             }
-
-
-            Console.WriteLine(color);
 
             shader.SetVector4("lightColor", color);
             shader.SetMatrix4("view", camera.GetViewMatrix());
@@ -189,7 +181,7 @@ namespace PracaInzynierska
             GL.DeleteVertexArray(vertexArrayObject);
             GL.UseProgram(0);
             GL.DeleteShader(shader.Handle);
-            GL.DeleteTexture(texture.Handle);
+            //GL.DeleteTexture(texture.Handle);
             shader.Dispose();
             base.OnUnload(e);
         }
