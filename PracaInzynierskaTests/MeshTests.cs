@@ -1,5 +1,6 @@
 using PracaInzynierska;
 using System;
+using System.Linq;
 using Xunit;
 
 namespace PracaInzynierskaTests
@@ -17,22 +18,47 @@ namespace PracaInzynierskaTests
         [InlineData(0,0)]
         [InlineData(0, 20)]
         [InlineData(20, 0)]
-        public void MeshGenerationArgumentsCheck(int resolution, int size)
+        public void MeshGenerationArgumentsCheck(uint resolution, int size)
         {
             Assert.Throws<ArgumentOutOfRangeException>(() => mesh.generateMesh(resolution, size));
         }
+
+        [Theory]
+        [InlineData(2,9)]
+        [InlineData(3, 16)]
+        [InlineData(4, 25)]
+        [InlineData(10, 121)]
+        public void MeshGenerationLength(uint resolution, int actualLength)
+        {
+            mesh.generateMesh(resolution, 2);
+            Assert.Equal(actualLength, mesh.getVertices().Length);
+
+        }
+
         [Fact]
         public void MeshGenerationResolutionOneVertices()
         {
-            Vertex[] actualVertices = new Vertex[4] { new Vertex(0f, 0f, 0f), new Vertex(2f, 0f, 0f), new Vertex(0f, 2f, 0f), new Vertex(2f, 2f, 0f) };
+            Vertex[] actualVertices = new Vertex[4] { new Vertex(0f, 0f, 0f), new Vertex(2f, 0f, 0f), new Vertex(0f, 0f, 2f), new Vertex(2f, 0f, 2f) };
             mesh.generateMesh(1,2);
             Assert.Equal(actualVertices, mesh.getVertices());
+
         }
 
         [Fact]
         public void MeshGenerationResolutionTwoIndices()
         {
-            int[] actualIndices = new int[24] { 1, 0, 4, 0, 3, 4, 2, 1, 5, 1, 4, 5, 4, 3, 7, 3, 6, 7, 5, 4, 8, 4, 7, 8 };
+            //Tested working data
+            uint[] actualIndices = new uint[24] {
+                4, 3, 1,
+                3, 0, 1,
+                5, 4, 2,
+                4, 1, 2,
+                7, 6, 4,
+                6, 3, 4,
+                8, 7, 5,
+                7, 4, 5
+            };
+
             mesh.generateMesh(2, 2);
             Assert.Equal(actualIndices, mesh.getIndices());
         }
