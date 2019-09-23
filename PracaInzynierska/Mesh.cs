@@ -13,7 +13,6 @@ namespace PracaInzynierska
     {
 
         public Vertex[] vertices;
-        public float[] verticesFloats;
         public uint[] indices;
 
         public void generateMesh(uint resolution, int size)
@@ -25,10 +24,9 @@ namespace PracaInzynierska
 
             vertices = new Vertex[(resolution + 1) * (resolution + 1)];
             indices = new uint[resolution * resolution * 2 * 3];
-            verticesFloats = new float[(resolution + 1) * (resolution + 1) * 3];
             float unitSize = size / (float)resolution;
 
-            //Generate vertices (Vertices array)
+            //Generate vertices
             int vertexIndex = 0;
             float z = 0;
             for(int i = 0; i < resolution + 1; i++)
@@ -42,23 +40,6 @@ namespace PracaInzynierska
                 }
                 z += unitSize;
             }
-
-            //Pure float array generation
-            /*vertexIndex = 0;
-            z = 0;
-            for (int i = 0; i < resolution + 1; i++)
-            {
-                float x = 0;
-                for (int j = 0; j < resolution + 1; j++)
-                {
-                    verticesFloats[vertexIndex] = x;
-                    verticesFloats[vertexIndex + 1] = -1f;
-                    verticesFloats[vertexIndex + 2] = z;
-                    x += unitSize;
-                    vertexIndex += 3;
-                }
-                z += unitSize;
-            }*/
 
             //Generate indices
             uint indiceIndex = 0;
@@ -90,11 +71,6 @@ namespace PracaInzynierska
         public uint[] getIndices()
         {
             return indices;
-        }
-
-        public float[] getVerticesFloats()
-        {
-            return verticesFloats;
         }
     }
 }
