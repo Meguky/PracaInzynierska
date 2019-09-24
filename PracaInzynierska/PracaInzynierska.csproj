@@ -65,11 +65,11 @@
     <Compile Include="Camera.cs" />
     <Compile Include="MainWindow.cs" />
     <Compile Include="Mesh.cs" />
+    <Compile Include="Noise.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Shader.cs" />
     <Compile Include="Texture.cs" />
-    <Compile Include="Vertex.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

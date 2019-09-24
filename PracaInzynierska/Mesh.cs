@@ -12,7 +12,7 @@ namespace PracaInzynierska
     public class Mesh
     {
 
-        public Vertex[] vertices;
+        public Vector3[] vertices;
         public uint[] indices;
 
         public void generateMesh(uint resolution, int size)
@@ -22,7 +22,7 @@ namespace PracaInzynierska
                 throw new ArgumentOutOfRangeException();
             }
 
-            vertices = new Vertex[(resolution + 1) * (resolution + 1)];
+            vertices = new Vector3[(resolution + 1) * (resolution + 1)];
             indices = new uint[resolution * resolution * 2 * 3];
             float unitSize = size / (float)resolution;
 
@@ -34,7 +34,7 @@ namespace PracaInzynierska
                 float x = 0;
                 for (int j = 0; j < resolution + 1; j++)
                 {
-                    vertices[vertexIndex] = new Vertex(x, 0f, z);
+                    vertices[vertexIndex] = new Vector3(x, 0f, z);
                     x += unitSize;
                     vertexIndex++;
                 }
@@ -63,7 +63,7 @@ namespace PracaInzynierska
             }
         }
 
-        public Vertex[] getVertices()
+        public Vector3[] getVertices()
         {
             return vertices;
         }
@@ -72,5 +72,6 @@ namespace PracaInzynierska
         {
             return indices;
         }
+
     }
 }

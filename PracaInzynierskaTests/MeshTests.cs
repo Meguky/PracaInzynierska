@@ -2,6 +2,7 @@ using PracaInzynierska;
 using System;
 using System.Linq;
 using Xunit;
+using OpenTK;
 
 namespace PracaInzynierskaTests
 {
@@ -38,7 +39,7 @@ namespace PracaInzynierskaTests
         [Fact]
         public void MeshGenerationResolutionOneVertices()
         {
-            Vertex[] actualVertices = new Vertex[4] { new Vertex(0f, 0f, 0f), new Vertex(2f, 0f, 0f), new Vertex(0f, 0f, 2f), new Vertex(2f, 0f, 2f) };
+            Vector3[] actualVertices = new Vector3[4] { new Vector3(0f, 0f, 0f), new Vector3(2f, 0f, 0f), new Vector3(0f, 0f, 2f), new Vector3(2f, 0f, 2f) };
             mesh.generateMesh(1,2);
             Assert.Equal(actualVertices, mesh.getVertices());
 
