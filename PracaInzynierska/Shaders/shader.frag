@@ -2,13 +2,12 @@
 
 out vec4 outputColor;
 
-in vec2 texCoord;
-
-uniform sampler2D texture0;
 uniform vec4 lightColor;
+uniform vec4 terrainColor;
+uniform float ambientStrength;
 
 void main()
 {
-    //outputColor = texture(texture0, texCoord) * lightColor;
-	outputColor = lightColor;
+    vec4 ambient = ambientStrength * lightColor;
+	outputColor = ambient * terrainColor;
 }

@@ -17,15 +17,18 @@ namespace PracaInzynierska
         int vertexArrayObject;
         int elementBufferObject;
         Shader shader;
-        Texture texture;
         Camera camera;
         float time;
         bool firstMove = true;
         Vector2 lastPos;
-        Vector4 color = new Vector4(1f,1f,1f,1f);
+
+        //Lighting
+        Vector4 ambientLightColor = new Vector4(1f,1f,1f,1f);
+        private float ambientStrength = 0.1f;
+        Vector4 terrainColor = new Vector4(0.3f,1.0f,0.1f,1.0f);
         private Mesh mesh;
-        private uint resolution = 10;
-        private int size = 10;
+        private uint resolution = 200;
+        private int size = 100;
 
         public MainWindow(int width, int height, string title) : base(width,height,GraphicsMode.Default, title) { }
 
@@ -39,13 +42,22 @@ namespace PracaInzynierska
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
 
             mesh = new Mesh();
+            Noise noise = new Noise(resolution + 1, 0.05f);
+
+            float[] noiseValues = noise.GetNoise();
 
             mesh.generateMesh(resolution,size);
 
+            Vector3[] meshVertices = mesh.getVertices();
+
+            for (int i = 0; i < (resolution + 1) * (resolution + 1); i++)
+            {
+                meshVertices[i].Y = noiseValues[i];
+            }
+
             vertexBufferObject = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferObject);
-            GL.BufferData(BufferTarget.ArrayBuffer, mesh.getVertices().Length * Marshal.SizeOf(typeof(Vertex)), mesh.getVertices(), BufferUsageHint.StaticDraw);
-
+            GL.BufferData(BufferTarget.ArrayBuffer, mesh.getVertices().Length * Marshal.SizeOf(typeof(Vector3)), mesh.getVertices(), BufferUsageHint.StaticDraw);
             elementBufferObject = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
             GL.BufferData(BufferTarget.ElementArrayBuffer, mesh.getIndices().Length * sizeof(uint), mesh.getIndices(), BufferUsageHint.StaticDraw);
@@ -53,19 +65,13 @@ namespace PracaInzynierska
             shader = new Shader("../../Shaders/shader.vert", "../../Shaders/shader.frag");
             shader.Use();
 
-            //texture = new Texture("../../container.png");
-            //texture.Use();
-
             GL.BindVertexArray(vertexArrayObject);
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferObject);
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
 
             GL.EnableVertexAttribArray(shader.GetAttribLocation("aPosition"));
-            GL.VertexAttribPointer(shader.GetAttribLocation("aPosition"), 3, VertexAttribPointerType.Float, false, Marshal.SizeOf(typeof(Vertex)), 0);
-
-            //GL.EnableVertexAttribArray(shader.GetAttribLocation("aTexCoord"));
-            //GL.VertexAttribPointer(shader.GetAttribLocation("aTexCoord"), 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
+            GL.VertexAttribPointer(shader.GetAttribLocation("aPosition"), 3, VertexAttribPointerType.Float, false, Marshal.SizeOf(typeof(Vector3)), 0);
 
             camera = new Camera(Vector3.UnitZ * 3, Width / (float)Height);
 
@@ -79,21 +85,23 @@ namespace PracaInzynierska
             time += 4.0f * (float)e.Time;
             
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            //texture.Use();
             shader.Use();
             GL.BindVertexArray(vertexArrayObject);
             Matrix4 model;
 
             {
-                //model = Matrix4.Identity * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(time * 50 + i * 5));
                 model = Matrix4.Identity;
                 shader.SetMatrix4("model", model);
                 GL.DrawElements(PrimitiveType.Triangles, mesh.getIndices().Length, DrawElementsType.UnsignedInt, 0);
             }
 
-            shader.SetVector4("lightColor", color);
+            shader.SetVector4("lightColor", ambientLightColor);
+            shader.SetVector4("terrainColor", terrainColor);
+            shader.SetFloat("ambientStrength", ambientStrength);
             shader.SetMatrix4("view", camera.GetViewMatrix());
             shader.SetMatrix4("projection", camera.GetProjectionMatrix());
+
+            Title = "Generacja terenu " + (1f / e.Time).ToString("0.") + " FPS";
 
             Context.SwapBuffers();
 
@@ -143,6 +151,33 @@ namespace PracaInzynierska
                 camera.speed += 0.5f;
             if (input.IsKeyDown(Key.Q))
                 camera.speed -= 0.5f;
+            if (input.IsKeyDown(Key.G))
+                GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
+            if (input.IsKeyDown(Key.B))
+                GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+            if (input.IsKeyDown(Key.L))
+            {
+                resolution++;
+                mesh.generateMesh(resolution, size);
+
+                GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferObject);
+                GL.BufferData(BufferTarget.ArrayBuffer, mesh.getVertices().Length * Marshal.SizeOf(typeof(Vector3)), mesh.getVertices(), BufferUsageHint.StaticDraw);
+
+                GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
+                GL.BufferData(BufferTarget.ElementArrayBuffer, mesh.getIndices().Length * sizeof(uint), mesh.getIndices(), BufferUsageHint.StaticDraw);
+            }
+
+            if (input.IsKeyDown(Key.O))
+            {
+                resolution--;
+                mesh.generateMesh(resolution, size);
+
+                GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferObject);
+                GL.BufferData(BufferTarget.ArrayBuffer, mesh.getVertices().Length * Marshal.SizeOf(typeof(Vector3)), mesh.getVertices(), BufferUsageHint.StaticDraw);
+
+                GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
+                GL.BufferData(BufferTarget.ElementArrayBuffer, mesh.getIndices().Length * sizeof(uint), mesh.getIndices(), BufferUsageHint.StaticDraw);
+            }
 
             var mouse = Mouse.GetState();
 
@@ -160,6 +195,7 @@ namespace PracaInzynierska
                 camera.Yaw += deltaX * camera.sensitivity;
                 camera.Pitch -= deltaY * camera.sensitivity;
             }
+
 
             base.OnUpdateFrame(e);
         }
