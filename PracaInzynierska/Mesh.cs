@@ -13,26 +13,56 @@ namespace PracaInzynierska
     {
 
         public Vector3[] vertices;
+        public Vector3[] normals;
+        public Vector3[] colors;
+        public Vector3[,] verticesData;
         public uint[] indices;
 
-        public void generateMesh(uint resolution, int size)
+        private uint Resolution { get; set; }
+        private int Size { get; set; }
+
+        private float unitSize;
+
+        public Mesh(uint _resolution, int _size)
         {
-            if (resolution == 0 || size == 0)
+            if (_resolution == 0 || _size == 0)
             {
                 throw new ArgumentOutOfRangeException();
             }
 
-            vertices = new Vector3[(resolution + 1) * (resolution + 1)];
-            indices = new uint[resolution * resolution * 2 * 3];
-            float unitSize = size / (float)resolution;
+            Resolution = _resolution;
+            Size = _size;
+
+            vertices = new Vector3[(Resolution + 1) * (Resolution + 1)];
+
+            normals = new Vector3[vertices.Length];
+
+            colors = new Vector3[vertices.Length];
+
+            Random rand = new Random();
+
+            for (int i = 0; i < colors.Length; i++)
+            { 
+                colors[i] = new Vector3(0.3f, 1.0f, 0.4f);
+            }
+
+            verticesData = new Vector3[vertices.Length,3];
+
+            indices = new uint[Resolution * Resolution * 2 * 3];
+
+            unitSize = Size / (float) Resolution;
+        }
+
+        public void generateMesh()
+        {
 
             //Generate vertices
             int vertexIndex = 0;
             float z = 0;
-            for(int i = 0; i < resolution + 1; i++)
+            for(int i = 0; i < Resolution + 1; i++)
             {
                 float x = 0;
-                for (int j = 0; j < resolution + 1; j++)
+                for (int j = 0; j < Resolution + 1; j++)
                 {
                     vertices[vertexIndex] = new Vector3(x, 0f, z);
                     x += unitSize;
@@ -44,33 +74,77 @@ namespace PracaInzynierska
             //Generate indices
             uint indiceIndex = 0;
             uint indiceOffset = 0;
-            for(uint i = 0; i < resolution; i++)
+            for(uint i = 0; i < Resolution; i++)
             {
-                for(uint j = 0; j < resolution; j++)
+                for(uint j = 0; j < Resolution; j++)
                 {
                     //First triangle
-                    indices[indiceIndex] = j + resolution + 2 + indiceOffset;
-                    indices[indiceIndex + 1] = j + resolution + 1 + indiceOffset;
+                    indices[indiceIndex] = j + Resolution + 2 + indiceOffset;
+                    indices[indiceIndex + 1] = j + Resolution + 1 + indiceOffset;
                     indices[indiceIndex + 2] = j + 1 + indiceOffset;
                     //Second triangle
-                    indices[indiceIndex + 3] = j + 1 + resolution + indiceOffset;
+                    indices[indiceIndex + 3] = j + 1 + Resolution + indiceOffset;
                     indices[indiceIndex + 4] = j + indiceOffset;
                     indices[indiceIndex + 5] = j + 1 + indiceOffset;
                     indiceIndex += 6;
                 }
 
-                indiceOffset += resolution + 1;
+                indiceOffset += Resolution + 1;
+            }
+
+            calculateNormals();
+        }
+
+        private void calculateNormals()
+        {
+            
+
+            int triangleIndex = 0;
+            for (int i = 0; i < normals.Length- 2; i++)
+            {
+                Vector3 normal = Vector3.Normalize(Vector3.Cross(vertices[indices[triangleIndex + 2]] - vertices[indices[triangleIndex]], vertices[indices[triangleIndex + 1]] - vertices[indices[triangleIndex]]));
+                normals[i] += normal;
+                normals[i + 1] += normal;
+                normals[i + 2] += normal;
+                triangleIndex += 3;
             }
         }
 
-        public Vector3[] getVertices()
+        public void applyNoise(float[] noise)
         {
-            return vertices;
+            if(noise.Length != vertices.Length)
+            {
+                throw new ArgumentException();
+            }
+
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                vertices[i].Y = noise[i];
+            }
+
+            calculateNormals();
+        }
+
+        public Vector3[,] getVerticesData()
+        {
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                verticesData[i, 0] = vertices[i];
+                verticesData[i, 1] = normals[i];
+                verticesData[i, 2] = colors[i];
+            }
+
+            return verticesData;
         }
 
         public uint[] getIndices()
         {
             return indices;
+        }
+
+        public Vector3[] getVertices()
+        {
+            return vertices;
         }
 
     }

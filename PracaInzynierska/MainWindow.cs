@@ -22,13 +22,12 @@ namespace PracaInzynierska
         bool firstMove = true;
         Vector2 lastPos;
 
-        //Lighting
-        Vector4 ambientLightColor = new Vector4(1f,1f,1f,1f);
-        private float ambientStrength = 0.1f;
-        Vector4 terrainColor = new Vector4(0.3f,1.0f,0.1f,1.0f);
+        Vector3 ambientLightColor = new Vector3(1f,1f,1f);
+        private Vector3 lightPosition = new Vector3(50f, 15f, 50f);
+        private float ambientStrength = 0.05f;
         private Mesh mesh;
-        private uint resolution = 200;
-        private int size = 100;
+        private uint resolution = 100;
+        private int size = 10;
 
         public MainWindow(int width, int height, string title) : base(width,height,GraphicsMode.Default, title) { }
 
@@ -41,23 +40,19 @@ namespace PracaInzynierska
             GL.Enable(EnableCap.DepthTest);
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
 
-            mesh = new Mesh();
+            mesh = new Mesh(resolution, size);
             Noise noise = new Noise(resolution + 1, 0.05f);
 
             float[] noiseValues = noise.GetNoise();
 
-            mesh.generateMesh(resolution,size);
+            mesh.generateMesh();
 
-            Vector3[] meshVertices = mesh.getVertices();
-
-            for (int i = 0; i < (resolution + 1) * (resolution + 1); i++)
-            {
-                meshVertices[i].Y = noiseValues[i];
-            }
+            mesh.applyNoise(noiseValues);
 
             vertexBufferObject = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferObject);
-            GL.BufferData(BufferTarget.ArrayBuffer, mesh.getVertices().Length * Marshal.SizeOf(typeof(Vector3)), mesh.getVertices(), BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, mesh.getVerticesData().Length * Marshal.SizeOf(typeof(Vector3)), mesh.getVerticesData(), BufferUsageHint.StaticDraw);
+
             elementBufferObject = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
             GL.BufferData(BufferTarget.ElementArrayBuffer, mesh.getIndices().Length * sizeof(uint), mesh.getIndices(), BufferUsageHint.StaticDraw);
@@ -67,23 +62,32 @@ namespace PracaInzynierska
 
             GL.BindVertexArray(vertexArrayObject);
 
-            GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferObject);
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
+            
 
             GL.EnableVertexAttribArray(shader.GetAttribLocation("aPosition"));
-            GL.VertexAttribPointer(shader.GetAttribLocation("aPosition"), 3, VertexAttribPointerType.Float, false, Marshal.SizeOf(typeof(Vector3)), 0);
+            GL.VertexAttribPointer(shader.GetAttribLocation("aPosition"), 3, VertexAttribPointerType.Float, false, sizeof(float) * 9, 0);
+
+            GL.EnableVertexAttribArray(shader.GetAttribLocation("aNormal"));
+            GL.VertexAttribPointer(shader.GetAttribLocation("aNormal"), 3, VertexAttribPointerType.Float, false, sizeof(float) * 9, sizeof(float) * 3);
+
+            GL.EnableVertexAttribArray(shader.GetAttribLocation("aColor"));
+            GL.VertexAttribPointer(shader.GetAttribLocation("aColor"), 3, VertexAttribPointerType.Float, false, sizeof(float) * 9, sizeof(float) * 6);
+
+
+            GL.BindVertexArray(0);
 
             camera = new Camera(Vector3.UnitZ * 3, Width / (float)Height);
 
             CursorVisible = false;
-            GL.BindVertexArray(0);
+            
             base.OnLoad(e);
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
-            time += 4.0f * (float)e.Time;
-            
+            time += 2.0f * (float)e.Time;
+
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             shader.Use();
             GL.BindVertexArray(vertexArrayObject);
@@ -95,9 +99,9 @@ namespace PracaInzynierska
                 GL.DrawElements(PrimitiveType.Triangles, mesh.getIndices().Length, DrawElementsType.UnsignedInt, 0);
             }
 
-            shader.SetVector4("lightColor", ambientLightColor);
-            shader.SetVector4("terrainColor", terrainColor);
+            shader.SetVector3("lightColor", ambientLightColor);
             shader.SetFloat("ambientStrength", ambientStrength);
+            shader.SetVector3("lightPos", lightPosition);
             shader.SetMatrix4("view", camera.GetViewMatrix());
             shader.SetMatrix4("projection", camera.GetProjectionMatrix());
 
@@ -158,10 +162,11 @@ namespace PracaInzynierska
             if (input.IsKeyDown(Key.L))
             {
                 resolution++;
-                mesh.generateMesh(resolution, size);
+                mesh = new Mesh(resolution, size);
+                mesh.generateMesh();
 
                 GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferObject);
-                GL.BufferData(BufferTarget.ArrayBuffer, mesh.getVertices().Length * Marshal.SizeOf(typeof(Vector3)), mesh.getVertices(), BufferUsageHint.StaticDraw);
+                GL.BufferData(BufferTarget.ArrayBuffer, mesh.getVerticesData().Length * sizeof(float) * 9, mesh.getVerticesData(), BufferUsageHint.StaticDraw);
 
                 GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
                 GL.BufferData(BufferTarget.ElementArrayBuffer, mesh.getIndices().Length * sizeof(uint), mesh.getIndices(), BufferUsageHint.StaticDraw);
@@ -170,13 +175,19 @@ namespace PracaInzynierska
             if (input.IsKeyDown(Key.O))
             {
                 resolution--;
-                mesh.generateMesh(resolution, size);
+                mesh = new Mesh(resolution, size);
+                mesh.generateMesh();
 
                 GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferObject);
-                GL.BufferData(BufferTarget.ArrayBuffer, mesh.getVertices().Length * Marshal.SizeOf(typeof(Vector3)), mesh.getVertices(), BufferUsageHint.StaticDraw);
+                GL.BufferData(BufferTarget.ArrayBuffer, mesh.getVerticesData().Length * sizeof(float) * 9, mesh.getVerticesData(), BufferUsageHint.StaticDraw);
 
                 GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
                 GL.BufferData(BufferTarget.ElementArrayBuffer, mesh.getIndices().Length * sizeof(uint), mesh.getIndices(), BufferUsageHint.StaticDraw);
+            }
+
+            if (input.IsKeyDown(Key.F))
+            {
+                lightPosition = camera.Position;
             }
 
             var mouse = Mouse.GetState();
