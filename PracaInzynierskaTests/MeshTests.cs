@@ -8,12 +8,8 @@ namespace PracaInzynierskaTests
 {
     public class MeshTests
     {
-        private readonly PracaInzynierska.Mesh mesh;
+        private PracaInzynierska.Mesh mesh;
 
-        public MeshTests()
-        {
-            mesh = new PracaInzynierska.Mesh();
-        }
 
         [Theory]
         [InlineData(0,0)]
@@ -21,7 +17,7 @@ namespace PracaInzynierskaTests
         [InlineData(20, 0)]
         public void MeshGenerationArgumentsCheck(uint resolution, int size)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => mesh.generateMesh(resolution, size));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new PracaInzynierska.Mesh(resolution, size));
         }
 
         [Theory]
@@ -31,7 +27,7 @@ namespace PracaInzynierskaTests
         [InlineData(10, 121)]
         public void MeshGenerationLength(uint resolution, int actualLength)
         {
-            mesh.generateMesh(resolution, 2);
+            mesh = new PracaInzynierska.Mesh(resolution, 2);
             Assert.Equal(actualLength, mesh.getVertices().Length);
 
         }
@@ -40,7 +36,8 @@ namespace PracaInzynierskaTests
         public void MeshGenerationResolutionOneVertices()
         {
             Vector3[] actualVertices = new Vector3[4] { new Vector3(0f, 0f, 0f), new Vector3(2f, 0f, 0f), new Vector3(0f, 0f, 2f), new Vector3(2f, 0f, 2f) };
-            mesh.generateMesh(1,2);
+            mesh = new PracaInzynierska.Mesh(1, 2);
+            mesh.generateMesh();
             Assert.Equal(actualVertices, mesh.getVertices());
 
         }
@@ -60,7 +57,8 @@ namespace PracaInzynierskaTests
                 7, 4, 5
             };
 
-            mesh.generateMesh(2, 2);
+            mesh = new PracaInzynierska.Mesh(2, 2);
+            mesh.generateMesh();
             Assert.Equal(actualIndices, mesh.getIndices());
         }
     }
