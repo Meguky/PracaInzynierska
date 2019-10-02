@@ -16,38 +16,40 @@ namespace PracaInzynierska
         private readonly Dictionary<string, int> uniformLocations;
         public Shader(string vertexPath, string fragmentPath)
         {
-            int VertexShader;
-            int FragmentShader;
+            int vertexShader;
+            int fragmentShader;
 
-            string VertexShaderSource;
+            string vertexShaderSource;
 
             using (StreamReader reader = new StreamReader(vertexPath, Encoding.UTF8))
             {
-                VertexShaderSource = reader.ReadToEnd();
+                vertexShaderSource = reader.ReadToEnd();
             }
 
-            string FragmentShaderSource;
+            string fragmentShaderSource;
 
             using (StreamReader reader = new StreamReader(fragmentPath, Encoding.UTF8))
             {
-                FragmentShaderSource = reader.ReadToEnd();
+                fragmentShaderSource = reader.ReadToEnd();
             }
 
-            VertexShader = GL.CreateShader(ShaderType.VertexShader);
-            GL.ShaderSource(VertexShader, VertexShaderSource);
+            vertexShader = GL.CreateShader(ShaderType.VertexShader);
+            GL.ShaderSource(vertexShader, vertexShaderSource);
 
-            FragmentShader = GL.CreateShader(ShaderType.FragmentShader);
-            GL.ShaderSource(FragmentShader, FragmentShaderSource);
+            fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
+            GL.ShaderSource(fragmentShader, fragmentShaderSource);
 
-            GL.CompileShader(VertexShader);
+            GL.CompileShader(vertexShader);
 
-            string infoLogVert = GL.GetShaderInfoLog(VertexShader);
+            string infoLogVert = GL.GetShaderInfoLog(vertexShader);
             if (infoLogVert != String.Empty)
             {
                 Console.WriteLine(infoLogVert);
             }
 
-            string infoLogFrag = GL.GetShaderInfoLog(FragmentShader);
+            GL.CompileShader(fragmentShader);
+
+            string infoLogFrag = GL.GetShaderInfoLog(fragmentShader);
             if (infoLogFrag != String.Empty)
             {
                 Console.WriteLine(infoLogFrag);
@@ -55,15 +57,102 @@ namespace PracaInzynierska
 
             Handle = GL.CreateProgram();
 
-            GL.AttachShader(Handle, VertexShader);
-            GL.AttachShader(Handle, FragmentShader);
+            GL.AttachShader(Handle, vertexShader);
+            GL.AttachShader(Handle, fragmentShader);
 
             GL.LinkProgram(Handle);
 
-            GL.DetachShader(Handle, VertexShader);
-            GL.DetachShader(Handle, FragmentShader);
-            GL.DeleteShader(FragmentShader);
-            GL.DeleteShader(VertexShader);
+            GL.DetachShader(Handle, vertexShader);
+            GL.DetachShader(Handle, fragmentShader);
+            GL.DeleteShader(fragmentShader);
+            GL.DeleteShader(vertexShader);
+
+            GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out var numberOfUniforms);
+
+            uniformLocations = new Dictionary<string, int>();
+
+            for (var i = 0; i < numberOfUniforms; i++)
+            {
+                var key = GL.GetActiveUniform(Handle, i, out _, out _);
+                var location = GL.GetUniformLocation(Handle, key);
+                uniformLocations.Add(key, location);
+            }
+        }
+
+        public Shader(string vertexPath, string fragmentPath, string geometryPath)
+        {
+            int vertexShader;
+            int fragmentShader;
+            int geometryShader;
+
+            string vertexShaderSource;
+
+            using (StreamReader reader = new StreamReader(vertexPath, Encoding.UTF8))
+            {
+                vertexShaderSource = reader.ReadToEnd();
+            }
+
+            string fragmentShaderSource;
+
+            using (StreamReader reader = new StreamReader(fragmentPath, Encoding.UTF8))
+            {
+                fragmentShaderSource = reader.ReadToEnd();
+            }
+
+            string geometryShaderSource;
+
+            using (StreamReader reader = new StreamReader(geometryPath, Encoding.UTF8))
+            {
+                geometryShaderSource = reader.ReadToEnd();
+            }
+
+            vertexShader = GL.CreateShader(ShaderType.VertexShader);
+            GL.ShaderSource(vertexShader, vertexShaderSource);
+
+            fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
+            GL.ShaderSource(fragmentShader, fragmentShaderSource);
+
+            geometryShader = GL.CreateShader(ShaderType.GeometryShader);
+            GL.ShaderSource(geometryShader, geometryShaderSource);
+
+            GL.CompileShader(vertexShader);
+
+            string infoLogVert = GL.GetShaderInfoLog(vertexShader);
+            if (infoLogVert != String.Empty)
+            {
+                Console.WriteLine(infoLogVert);
+            }
+
+            GL.CompileShader(fragmentShader);
+
+            string infoLogFrag = GL.GetShaderInfoLog(fragmentShader);
+            if (infoLogFrag != String.Empty)
+            {
+                Console.WriteLine(infoLogFrag);
+            }
+
+            GL.CompileShader(geometryShader);
+
+            string infoLogGeom = GL.GetShaderInfoLog(geometryShader);
+            if (infoLogFrag != String.Empty)
+            {
+                Console.WriteLine(infoLogFrag);
+            }
+
+            Handle = GL.CreateProgram();
+
+            GL.AttachShader(Handle, vertexShader);
+            GL.AttachShader(Handle, fragmentShader);
+            GL.AttachShader(Handle, geometryShader);
+
+            GL.LinkProgram(Handle);
+
+            GL.DetachShader(Handle, vertexShader);
+            GL.DetachShader(Handle, fragmentShader);
+            GL.DetachShader(Handle, geometryShader);
+            GL.DeleteShader(fragmentShader);
+            GL.DeleteShader(vertexShader);
+            GL.DeleteShader(geometryShader);
 
             GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out var numberOfUniforms);
 

@@ -1,24 +1,19 @@
 ﻿#version 330 core
 
 in vec3 aPosition;
-
 in vec3 aNormal;
 
-in vec3 aColor;
-
-out vec3 Color;
-out vec3 Normal;
-out vec3 FragPos;
+out VS_OUT {
+    vec4 normal;
+} vs_out;
 
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-
 void main(void)
 {
 	gl_Position = vec4(aPosition, 1.0) * model * view * projection;
-	Color = aColor;
-	Normal = aNormal;
-	FragPos = vec3(model * vec4(aPosition, 1.0));
+    mat4 normalMatrix = mat4(mat3(transpose(inverse(model))));
+    vs_out.normal = normalize(vec4(aNormal, 0.0) * normalMatrix * view * projection);
 }

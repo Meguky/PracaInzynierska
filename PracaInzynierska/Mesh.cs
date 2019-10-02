@@ -97,17 +97,26 @@ namespace PracaInzynierska
 
         private void calculateNormals()
         {
-            
-
             int triangleIndex = 0;
-            for (int i = 0; i < normals.Length- 2; i++)
+            for (int i = 0; i < normals.Length - 2 ; i++)
             {
-                Vector3 normal = Vector3.Normalize(Vector3.Cross(vertices[indices[triangleIndex + 2]] - vertices[indices[triangleIndex]], vertices[indices[triangleIndex + 1]] - vertices[indices[triangleIndex]]));
-                normals[i] += normal;
-                normals[i + 1] += normal;
-                normals[i + 2] += normal;
+                Vector3 A = vertices[indices[triangleIndex]];
+                Vector3 B = vertices[indices[triangleIndex + 1]];
+                Vector3 C = vertices[indices[triangleIndex + 2]];
+
+                Vector3 norm = Vector3.Normalize(Vector3.Cross( C - A, B - A));
+
+                normals[i] += norm;
+                normals[i + 1] += norm;
+                normals[i + 2] += norm;
+
+                normals[i] = Vector3.Normalize(normals[i]);
+                normals[i + 1] = Vector3.Normalize(normals[i + 1]);
+                normals[i + 2] = Vector3.Normalize(normals[i + 2]);
+
                 triangleIndex += 3;
             }
+
         }
 
         public void applyNoise(float[] noise)
@@ -120,6 +129,21 @@ namespace PracaInzynierska
             for (int i = 0; i < vertices.Length; i++)
             {
                 vertices[i].Y = noise[i];
+            }
+
+            calculateNormals();
+        }
+
+        public void addNoise(float[] noise, float strength)
+        {
+            if (noise.Length != vertices.Length)
+            {
+                throw new ArgumentException();
+            }
+
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                vertices[i].Y += noise[i] * strength;
             }
 
             calculateNormals();

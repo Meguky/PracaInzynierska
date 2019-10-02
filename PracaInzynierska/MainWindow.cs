@@ -17,6 +17,9 @@ namespace PracaInzynierska
         int vertexArrayObject;
         int elementBufferObject;
         Shader shader;
+
+        private Shader normalsShader;
+
         Camera camera;
         float time;
         bool firstMove = true;
@@ -41,13 +44,20 @@ namespace PracaInzynierska
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
 
             mesh = new Mesh(resolution, size);
-            Noise noise = new Noise(resolution + 1, 0.05f);
+            Noise noise = new Noise(resolution + 1, 0.01f);
+            OpenSimplexNoise n = new OpenSimplexNoise();
+            
 
-            float[] noiseValues = noise.GetNoise();
+            float[] noiseValues = n.getNoise(resolution, 0.2f);
+
+
 
             mesh.generateMesh();
 
             mesh.applyNoise(noiseValues);
+
+            noiseValues = noise.GetNoise();
+            mesh.addNoise(noiseValues, 1f);
 
             vertexBufferObject = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferObject);
@@ -58,6 +68,8 @@ namespace PracaInzynierska
             GL.BufferData(BufferTarget.ElementArrayBuffer, mesh.getIndices().Length * sizeof(uint), mesh.getIndices(), BufferUsageHint.StaticDraw);
 
             shader = new Shader("../../Shaders/shader.vert", "../../Shaders/shader.frag");
+            normalsShader = new Shader("../../Shaders/normalsShader.vert", "../../Shaders/normalsShader.frag", "../../Shaders/normalsShader.geom");
+
             shader.Use();
 
             GL.BindVertexArray(vertexArrayObject);
@@ -74,6 +86,13 @@ namespace PracaInzynierska
             GL.EnableVertexAttribArray(shader.GetAttribLocation("aColor"));
             GL.VertexAttribPointer(shader.GetAttribLocation("aColor"), 3, VertexAttribPointerType.Float, false, sizeof(float) * 9, sizeof(float) * 6);
 
+            normalsShader.Use();
+
+            GL.EnableVertexAttribArray(normalsShader.GetAttribLocation("aPosition"));
+            GL.VertexAttribPointer(normalsShader.GetAttribLocation("aPosition"), 3, VertexAttribPointerType.Float, false, sizeof(float) * 9, 0);
+
+            GL.EnableVertexAttribArray(normalsShader.GetAttribLocation("aNormal"));
+            GL.VertexAttribPointer(normalsShader.GetAttribLocation("aNormal"), 3, VertexAttribPointerType.Float, false, sizeof(float) * 9, sizeof(float) * 3);
 
             GL.BindVertexArray(0);
 
@@ -89,14 +108,19 @@ namespace PracaInzynierska
             time += 2.0f * (float)e.Time;
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            shader.Use();
+            
             GL.BindVertexArray(vertexArrayObject);
             Matrix4 model;
 
             {
                 model = Matrix4.Identity;
                 shader.SetMatrix4("model", model);
+                normalsShader.SetMatrix4("model", model);
+                shader.Use();
                 GL.DrawElements(PrimitiveType.Triangles, mesh.getIndices().Length, DrawElementsType.UnsignedInt, 0);
+                normalsShader.Use();
+                GL.DrawElements(PrimitiveType.Triangles, mesh.getIndices().Length, DrawElementsType.UnsignedInt, 0);
+
             }
 
             shader.SetVector3("lightColor", ambientLightColor);
@@ -104,6 +128,8 @@ namespace PracaInzynierska
             shader.SetVector3("lightPos", lightPosition);
             shader.SetMatrix4("view", camera.GetViewMatrix());
             shader.SetMatrix4("projection", camera.GetProjectionMatrix());
+            normalsShader.SetMatrix4("view", camera.GetViewMatrix());
+            normalsShader.SetMatrix4("projection", camera.GetProjectionMatrix());
 
             Title = "Generacja terenu " + (1f / e.Time).ToString("0.") + " FPS";
 
@@ -159,31 +185,6 @@ namespace PracaInzynierska
                 GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
             if (input.IsKeyDown(Key.B))
                 GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
-            if (input.IsKeyDown(Key.L))
-            {
-                resolution++;
-                mesh = new Mesh(resolution, size);
-                mesh.generateMesh();
-
-                GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferObject);
-                GL.BufferData(BufferTarget.ArrayBuffer, mesh.getVerticesData().Length * sizeof(float) * 9, mesh.getVerticesData(), BufferUsageHint.StaticDraw);
-
-                GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
-                GL.BufferData(BufferTarget.ElementArrayBuffer, mesh.getIndices().Length * sizeof(uint), mesh.getIndices(), BufferUsageHint.StaticDraw);
-            }
-
-            if (input.IsKeyDown(Key.O))
-            {
-                resolution--;
-                mesh = new Mesh(resolution, size);
-                mesh.generateMesh();
-
-                GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferObject);
-                GL.BufferData(BufferTarget.ArrayBuffer, mesh.getVerticesData().Length * sizeof(float) * 9, mesh.getVerticesData(), BufferUsageHint.StaticDraw);
-
-                GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
-                GL.BufferData(BufferTarget.ElementArrayBuffer, mesh.getIndices().Length * sizeof(uint), mesh.getIndices(), BufferUsageHint.StaticDraw);
-            }
 
             if (input.IsKeyDown(Key.F))
             {
@@ -228,8 +229,9 @@ namespace PracaInzynierska
             GL.DeleteVertexArray(vertexArrayObject);
             GL.UseProgram(0);
             GL.DeleteShader(shader.Handle);
-            //GL.DeleteTexture(texture.Handle);
+            GL.DeleteShader(normalsShader.Handle);
             shader.Dispose();
+            normalsShader.Dispose();
             base.OnUnload(e);
         }
     }
