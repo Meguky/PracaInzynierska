@@ -19,6 +19,7 @@ namespace PracaInzynierska
         Shader shader;
 
         private Shader normalsShader;
+        private bool toggleNormals = false;
 
         Camera camera;
         float time;
@@ -48,7 +49,7 @@ namespace PracaInzynierska
             OpenSimplexNoise n = new OpenSimplexNoise();
             
 
-            float[] noiseValues = n.getNoise(resolution, 0.2f);
+            float[] noiseValues = n.getNoise(resolution, 1.0f);
 
 
 
@@ -75,7 +76,6 @@ namespace PracaInzynierska
             GL.BindVertexArray(vertexArrayObject);
 
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
-            
 
             GL.EnableVertexAttribArray(shader.GetAttribLocation("aPosition"));
             GL.VertexAttribPointer(shader.GetAttribLocation("aPosition"), 3, VertexAttribPointerType.Float, false, sizeof(float) * 9, 0);
@@ -86,6 +86,7 @@ namespace PracaInzynierska
             GL.EnableVertexAttribArray(shader.GetAttribLocation("aColor"));
             GL.VertexAttribPointer(shader.GetAttribLocation("aColor"), 3, VertexAttribPointerType.Float, false, sizeof(float) * 9, sizeof(float) * 6);
 
+            //INIT NORMALS SHADER
             normalsShader.Use();
 
             GL.EnableVertexAttribArray(normalsShader.GetAttribLocation("aPosition"));
@@ -110,26 +111,30 @@ namespace PracaInzynierska
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             
             GL.BindVertexArray(vertexArrayObject);
-            Matrix4 model;
 
-            {
-                model = Matrix4.Identity;
-                shader.SetMatrix4("model", model);
-                normalsShader.SetMatrix4("model", model);
-                shader.Use();
-                GL.DrawElements(PrimitiveType.Triangles, mesh.getIndices().Length, DrawElementsType.UnsignedInt, 0);
-                normalsShader.Use();
-                GL.DrawElements(PrimitiveType.Triangles, mesh.getIndices().Length, DrawElementsType.UnsignedInt, 0);
+            shader.SetMatrix4("model", Matrix4.Identity);
 
-            }
+            shader.Use();
+            GL.DrawElements(PrimitiveType.Triangles, mesh.getIndices().Length, DrawElementsType.UnsignedInt, 0);
 
             shader.SetVector3("lightColor", ambientLightColor);
             shader.SetFloat("ambientStrength", ambientStrength);
             shader.SetVector3("lightPos", lightPosition);
             shader.SetMatrix4("view", camera.GetViewMatrix());
             shader.SetMatrix4("projection", camera.GetProjectionMatrix());
-            normalsShader.SetMatrix4("view", camera.GetViewMatrix());
-            normalsShader.SetMatrix4("projection", camera.GetProjectionMatrix());
+
+            if (toggleNormals)
+            {
+                normalsShader.SetMatrix4("model", Matrix4.Identity);
+                normalsShader.Use();
+                GL.DrawElements(PrimitiveType.Triangles, mesh.getIndices().Length, DrawElementsType.UnsignedInt, 0);
+                normalsShader.SetMatrix4("view", camera.GetViewMatrix());
+                normalsShader.SetMatrix4("projection", camera.GetProjectionMatrix());
+
+            }
+
+            
+            
 
             Title = "Generacja terenu " + (1f / e.Time).ToString("0.") + " FPS";
 
@@ -153,12 +158,7 @@ namespace PracaInzynierska
                 return;
             }
 
-            if (Keyboard.GetState().IsKeyDown(Key.Escape))
-            {
-                Exit();
-            }
-
-            var input = Keyboard.GetState();
+            KeyboardState input = Keyboard.GetState();
 
             if (input.IsKeyDown(Key.Escape))
             {
@@ -178,18 +178,15 @@ namespace PracaInzynierska
             if (input.IsKeyDown(Key.LShift))
                 camera.Position -= camera.up * camera.speed * (float)e.Time;
             if (input.IsKeyDown(Key.E))
-                camera.speed += 0.5f;
+                camera.speed = MathHelper.Clamp(camera.speed + 0.1f, 0, 10) ;
             if (input.IsKeyDown(Key.Q))
-                camera.speed -= 0.5f;
+                camera.speed = MathHelper.Clamp(camera.speed - 0.1f, 0, 10);
             if (input.IsKeyDown(Key.G))
                 GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
             if (input.IsKeyDown(Key.B))
                 GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
-
             if (input.IsKeyDown(Key.F))
-            {
                 lightPosition = camera.Position;
-            }
 
             var mouse = Mouse.GetState();
 
@@ -210,6 +207,18 @@ namespace PracaInzynierska
 
 
             base.OnUpdateFrame(e);
+        }
+
+        protected override void OnKeyDown(KeyboardKeyEventArgs e)
+        {
+            KeyboardState input = Keyboard.GetState();
+
+            if (input.IsKeyDown(Key.N))
+            {
+                toggleNormals = !toggleNormals;
+            }
+
+            base.OnKeyDown(e);
         }
 
         protected override void OnMouseMove(MouseMoveEventArgs e)

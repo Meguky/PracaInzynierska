@@ -6,7 +6,7 @@ in VS_OUT {
     vec4 normal;
 } gs_in[];
 
-const float MAGNITUDE = 0.4;
+const float MAGNITUDE = 0.3;
 
 void GenerateLine(int index)
 {
