@@ -65,6 +65,7 @@
     <Compile Include="Camera.cs" />
     <Compile Include="MainWindow.cs" />
     <Compile Include="Mesh.cs" />
+    <Compile Include="MeshesController.cs" />
     <Compile Include="Noise.cs" />
     <Compile Include="OpenSimplexNoise.cs" />
     <Compile Include="Program.cs" />

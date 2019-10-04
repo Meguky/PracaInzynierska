@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using OpenTK;
 
 namespace PracaInzynierska
 {
@@ -163,22 +160,13 @@ namespace PracaInzynierska
             }
         }
 
-        public float[] getNoise(uint resolution, float amplitude)
+        public float[] getNoise(Vector3[] vertices, float amplitude, float offset)
         {
-            float[] n = new float[(resolution + 1) *(resolution + 1)];
-            float unit = 5 / (float)resolution;
-            float xunit = 0;
+            float[] n = new float[vertices.Length];
 
-            for (int i = 0; i < resolution + 1; i++)
+            for (int i = 0; i < vertices.Length; i++)
             {
-                float yunit = 0;
-                for (int j = 0; j < resolution + 1; j++)
-                {
-                    n[i + (resolution + 1) * j ] = (float)Evaluate(xunit, yunit) * amplitude;
-                    yunit += unit;
-                }
-
-                xunit += unit;
+                n[i] = (float)Evaluate(vertices[i].X, vertices[i].Z) * amplitude;
             }
 
             return n;

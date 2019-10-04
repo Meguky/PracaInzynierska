@@ -12,18 +12,26 @@ namespace PracaInzynierska
     public class Mesh
     {
 
-        public Vector3[] vertices;
-        public Vector3[] normals;
-        public Vector3[] colors;
-        public Vector3[,] verticesData;
-        public uint[] indices;
+        private Vector3[] vertices;
+        private Vector3[] normals;
+        private Vector3[] colors;
+        private Vector3[,] verticesData;
+        private uint[] indices;
+
+        public Vector3 originPoint;
+
+        public Vector3 middlePoint;
 
         private uint Resolution { get; set; }
-        private int Size { get; set; }
+        private uint Size { get; set; }
 
         private float unitSize;
 
-        public Mesh(uint _resolution, int _size)
+        public Mesh()
+        {
+
+        }
+        public Mesh(uint _resolution, uint _size, Vector3 _origin, Vector3 _color)
         {
             if (_resolution == 0 || _size == 0)
             {
@@ -32,6 +40,7 @@ namespace PracaInzynierska
 
             Resolution = _resolution;
             Size = _size;
+            originPoint = _origin;
 
             vertices = new Vector3[(Resolution + 1) * (Resolution + 1)];
 
@@ -42,8 +51,8 @@ namespace PracaInzynierska
             Random rand = new Random();
 
             for (int i = 0; i < colors.Length; i++)
-            { 
-                colors[i] = new Vector3(0.3f, 1.0f, 0.4f);
+            {
+                colors[i] = _color;
             }
 
             verticesData = new Vector3[vertices.Length,3];
@@ -51,6 +60,10 @@ namespace PracaInzynierska
             indices = new uint[Resolution * Resolution * 2 * 3];
 
             unitSize = Size / (float) Resolution;
+
+            middlePoint.X = originPoint.X +  Size / 2;
+            middlePoint.Y = originPoint.Y;
+            middlePoint.Z = originPoint.Z + Size / 2;
         }
 
         public void generateMesh()
@@ -64,7 +77,7 @@ namespace PracaInzynierska
                 float x = 0;
                 for (int j = 0; j < Resolution + 1; j++)
                 {
-                    vertices[vertexIndex] = new Vector3(x, 0f, z);
+                    vertices[vertexIndex] = new Vector3(x, 0f, z) + originPoint;
                     x += unitSize;
                     vertexIndex++;
                 }
