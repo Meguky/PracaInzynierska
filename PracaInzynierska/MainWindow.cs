@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PracaInzynierska
@@ -29,7 +30,7 @@ namespace PracaInzynierska
 
         private uint resolution = 32;
         private uint size = 10;
-        private uint renderDistance = 4;
+        private uint renderDistance = 5;
 
         private MeshesController meshController;
 
@@ -49,9 +50,8 @@ namespace PracaInzynierska
             log.WriteToConsole("Mesh resolution: " + resolution);
             log.WriteToConsole("Mesh tris: " + mesh.getIndices().Length/3.0f);
             log.WriteToConsole("Normals: " + (toggleNormals ? "ON" : "OFF"));*/
-            meshController = new MeshesController(resolution, size, renderDistance, camera);
 
-            
+            meshController = new MeshesController(resolution, size, renderDistance, camera);
 
             CursorVisible = false;
             
@@ -115,8 +115,6 @@ namespace PracaInzynierska
                 GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
             if (input.IsKeyDown(Key.B))
                 GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
-            if (input.IsKeyDown(Key.F))
-                lightPosition = camera.Position;
 
             var mouse = Mouse.GetState();
 
@@ -135,6 +133,7 @@ namespace PracaInzynierska
                 camera.Pitch -= deltaY * camera.sensitivity;
             }
 
+            meshController.generateGrid();
 
             base.OnUpdateFrame(e);
         }
@@ -160,10 +159,10 @@ namespace PracaInzynierska
             base.OnMouseMove(e);
         }
 
+
         protected override void OnUnload(EventArgs e)
         {
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-
             meshController.deleteMeshesGLData();
 
             GL.UseProgram(0);

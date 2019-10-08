@@ -33,7 +33,7 @@ namespace PracaInzynierska
 
         private float unitSize;
 
-        public Mesh(uint _resolution, uint _size, Vector3 _origin, Vector3 _color)
+        public Mesh(uint _resolution, uint _size, Vector3 _origin, Vector3 _color, Shader _shader, Shader _normalsShader)
         {
             if (_resolution == 0 || _size == 0)
             {
@@ -43,6 +43,8 @@ namespace PracaInzynierska
             Resolution = _resolution;
             Size = _size;
             originPoint = _origin;
+            shader = _shader;
+            normalsShader = _normalsShader;
 
             vertices = new Vector3[(Resolution + 1) * (Resolution + 1)];
 
@@ -185,16 +187,22 @@ namespace PracaInzynierska
 
         public void draw(bool normalsActive, Vector3 ambientLightColor, float ambientStrength, Vector3 lightPosition, Camera camera)
         {
+
             shader.SetMatrix4("model", Matrix4.Identity);
             normalsShader.SetMatrix4("model", Matrix4.Identity);
+            shader.SetVector3("lightColor", ambientLightColor);
+            shader.SetFloat("ambientStrength", ambientStrength);
+            shader.SetVector3("lightPos", lightPosition);
+            shader.SetMatrix4("view", camera.GetViewMatrix());
+            shader.SetMatrix4("projection", camera.GetProjectionMatrix());
+            normalsShader.SetMatrix4("view", camera.GetViewMatrix());
+            normalsShader.SetMatrix4("projection", camera.GetProjectionMatrix());
 
             GL.BindVertexArray(vertexArrayObject);
 
             shader.Use();
             GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
-            shader.SetVector3("lightColor", ambientLightColor);
-            shader.SetFloat("ambientStrength", ambientStrength);
-            shader.SetVector3("lightPos", lightPosition);
+            
 
 
             if (normalsActive)
@@ -206,12 +214,8 @@ namespace PracaInzynierska
 
             }
 
+            GL.BindVertexArray(0);
 
-            shader.SetMatrix4("view", camera.GetViewMatrix());
-            shader.SetMatrix4("projection", camera.GetProjectionMatrix());
-
-            normalsShader.SetMatrix4("view", camera.GetViewMatrix());
-            normalsShader.SetMatrix4("projection", camera.GetProjectionMatrix());
         }
 
         public Vector3[] getVertices()
@@ -233,11 +237,6 @@ namespace PracaInzynierska
                     GL.DeleteBuffer(vertexBufferObject);
                     GL.DeleteBuffer(elementBufferObject);
                     GL.DeleteVertexArray(vertexArrayObject);
-                }
-                else
-                {
-                    shader = new Shader("../../Shaders/shader.vert", "../../Shaders/shader.frag");
-                    normalsShader = new Shader("../../Shaders/normalsShader.vert", "../../Shaders/normalsShader.frag", "../../Shaders/normalsShader.geom");
                 }
 
                 vertexArrayObject = GL.GenVertexArray();

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace PracaInzynierska
 {
-    class Shader : IDisposable
+    public class Shader : IDisposable
     {
         public int Handle;
         private bool disposedValue = false;
