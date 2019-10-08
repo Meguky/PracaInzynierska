@@ -38,9 +38,9 @@ namespace PracaInzynierska
         protected override void OnLoad(EventArgs e)
         {
 
-            camera = new Camera(Vector3.UnitZ * 30, Width / (float)Height);
+            camera = new Camera(Vector3.UnitY * 3, Width / (float)Height);
 
-            GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+            GL.ClearColor(0.2f, 0.6f, 1f, 1.0f);
 
             GL.Enable(EnableCap.DepthTest);
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);

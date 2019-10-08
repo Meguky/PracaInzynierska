@@ -40,7 +40,7 @@ namespace PracaInzynierska
 
             for (int i = 0; i < meshesOriginPointGrid.Length; i++)
             {
-                mesh = new Mesh(meshResolution, meshSize, meshesOriginPointGrid[i], new Vector3(1.0f, 1.0f, 1.0f), "../../Shaders");
+                mesh = new Mesh(meshResolution, meshSize, meshesOriginPointGrid[i], new Vector3(1.0f, 1.0f, 1.0f));
                 mesh.generateMesh();
                 float[] noiseValues = n.getNoise(mesh.getVertices(), 0.5f, 0);
                 mesh.applyNoise(noiseValues);

@@ -27,14 +27,13 @@ namespace PracaInzynierska
         int elementBufferObject;
         Shader shader;
         Shader normalsShader;
-        private string shaderFolderPath;
 
         private uint Resolution { get; set; }
         private uint Size { get; set; }
 
         private float unitSize;
 
-        public Mesh(uint _resolution, uint _size, Vector3 _origin, Vector3 _color, string _shaderFolderPath)
+        public Mesh(uint _resolution, uint _size, Vector3 _origin, Vector3 _color)
         {
             if (_resolution == 0 || _size == 0)
             {
@@ -44,7 +43,6 @@ namespace PracaInzynierska
             Resolution = _resolution;
             Size = _size;
             originPoint = _origin;
-            shaderFolderPath = _shaderFolderPath;
 
             vertices = new Vector3[(Resolution + 1) * (Resolution + 1)];
 
@@ -228,54 +226,67 @@ namespace PracaInzynierska
 
         private void bindBuffers(bool firstGeneration = true)
         {
-            if (!firstGeneration)
+            try
             {
-                GL.DeleteBuffer(vertexBufferObject);
-                GL.DeleteBuffer(elementBufferObject);
-                GL.DeleteVertexArray(vertexArrayObject);
+                if (!firstGeneration)
+                {
+                    GL.DeleteBuffer(vertexBufferObject);
+                    GL.DeleteBuffer(elementBufferObject);
+                    GL.DeleteVertexArray(vertexArrayObject);
+                }
+                else
+                {
+                    shader = new Shader("../../Shaders/shader.vert", "../../Shaders/shader.frag");
+                    normalsShader = new Shader("../../Shaders/normalsShader.vert", "../../Shaders/normalsShader.frag", "../../Shaders/normalsShader.geom");
+                }
+
+                vertexArrayObject = GL.GenVertexArray();
+                vertexBufferObject = GL.GenBuffer();
+                elementBufferObject = GL.GenBuffer();
+
+                GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferObject);
+                GL.BufferData(BufferTarget.ArrayBuffer, verticesData.Length * Marshal.SizeOf(typeof(Vector3)),
+                    verticesData, BufferUsageHint.StaticDraw);
+
+
+                GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
+                GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices,
+                    BufferUsageHint.StaticDraw);
+
+                GL.BindVertexArray(vertexArrayObject);
+                GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
+
+                shader.Use();
+
+                GL.EnableVertexAttribArray(shader.GetAttribLocation("aPosition"));
+                GL.VertexAttribPointer(shader.GetAttribLocation("aPosition"), 3, VertexAttribPointerType.Float, false,
+                    sizeof(float) * 9, 0);
+
+                GL.EnableVertexAttribArray(shader.GetAttribLocation("aNormal"));
+                GL.VertexAttribPointer(shader.GetAttribLocation("aNormal"), 3, VertexAttribPointerType.Float, false,
+                    sizeof(float) * 9, sizeof(float) * 3);
+
+                GL.EnableVertexAttribArray(shader.GetAttribLocation("aColor"));
+                GL.VertexAttribPointer(shader.GetAttribLocation("aColor"), 3, VertexAttribPointerType.Float, false,
+                    sizeof(float) * 9, sizeof(float) * 6);
+
+                //INIT NORMALS SHADER
+                normalsShader.Use();
+
+                GL.EnableVertexAttribArray(normalsShader.GetAttribLocation("aPosition"));
+                GL.VertexAttribPointer(normalsShader.GetAttribLocation("aPosition"), 3, VertexAttribPointerType.Float,
+                    false, sizeof(float) * 9, 0);
+
+                GL.EnableVertexAttribArray(normalsShader.GetAttribLocation("aNormal"));
+                GL.VertexAttribPointer(normalsShader.GetAttribLocation("aNormal"), 3, VertexAttribPointerType.Float,
+                    false, sizeof(float) * 9, sizeof(float) * 3);
+
+                GL.BindVertexArray(0);
             }
-            else
+            catch (AccessViolationException e)
             {
-                shader = new Shader(shaderFolderPath + "/shader.vert", shaderFolderPath + "/shader.frag");
-                normalsShader = new Shader(shaderFolderPath + "/normalsShader.vert", shaderFolderPath + "/normalsShader.frag", shaderFolderPath + "/normalsShader.geom");
+                Console.WriteLine(e.ToString());
             }
-
-            vertexArrayObject = GL.GenVertexArray();
-            vertexBufferObject = GL.GenBuffer();
-            elementBufferObject = GL.GenBuffer();
-
-            GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferObject);
-            GL.BufferData(BufferTarget.ArrayBuffer, verticesData.Length * Marshal.SizeOf(typeof(Vector3)), verticesData, BufferUsageHint.StaticDraw);
-
-
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
-            GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
-
-            GL.BindVertexArray(vertexArrayObject);
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
-
-            shader.Use();
-
-            GL.EnableVertexAttribArray(shader.GetAttribLocation("aPosition"));
-            GL.VertexAttribPointer(shader.GetAttribLocation("aPosition"), 3, VertexAttribPointerType.Float, false, sizeof(float) * 9, 0);
-
-            GL.EnableVertexAttribArray(shader.GetAttribLocation("aNormal"));
-            GL.VertexAttribPointer(shader.GetAttribLocation("aNormal"), 3, VertexAttribPointerType.Float, false, sizeof(float) * 9, sizeof(float) * 3);
-
-            GL.EnableVertexAttribArray(shader.GetAttribLocation("aColor"));
-            GL.VertexAttribPointer(shader.GetAttribLocation("aColor"), 3, VertexAttribPointerType.Float, false, sizeof(float) * 9, sizeof(float) * 6);
-
-            //INIT NORMALS SHADER
-            normalsShader.Use();
-
-            GL.EnableVertexAttribArray(normalsShader.GetAttribLocation("aPosition"));
-            GL.VertexAttribPointer(normalsShader.GetAttribLocation("aPosition"), 3, VertexAttribPointerType.Float, false, sizeof(float) * 9, 0);
-
-            GL.EnableVertexAttribArray(normalsShader.GetAttribLocation("aNormal"));
-            GL.VertexAttribPointer(normalsShader.GetAttribLocation("aNormal"), 3, VertexAttribPointerType.Float, false, sizeof(float) * 9, sizeof(float) * 3);
-
-            GL.BindVertexArray(0);
-
         }
 
         public void deleteGLStructures()

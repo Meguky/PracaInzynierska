@@ -33,49 +33,58 @@ namespace PracaInzynierska
                 fragmentShaderSource = reader.ReadToEnd();
             }
 
-            vertexShader = GL.CreateShader(ShaderType.VertexShader);
-            GL.ShaderSource(vertexShader, vertexShaderSource);
-
-            fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
-            GL.ShaderSource(fragmentShader, fragmentShaderSource);
-
-            GL.CompileShader(vertexShader);
-
-            string infoLogVert = GL.GetShaderInfoLog(vertexShader);
-            if (infoLogVert != String.Empty)
+            try
             {
-                Console.WriteLine(infoLogVert);
+                vertexShader = GL.CreateShader(ShaderType.VertexShader);
+                GL.ShaderSource(vertexShader, vertexShaderSource);
+                fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
+                GL.ShaderSource(fragmentShader, fragmentShaderSource);
+
+                GL.CompileShader(vertexShader);
+
+                string infoLogVert = GL.GetShaderInfoLog(vertexShader);
+
+                if (infoLogVert != String.Empty)
+                {
+                    Console.WriteLine(infoLogVert);
+                }
+
+                GL.CompileShader(fragmentShader);
+
+                string infoLogFrag = GL.GetShaderInfoLog(fragmentShader);
+
+                if (infoLogFrag != String.Empty)
+                {
+                    Console.WriteLine(infoLogFrag);
+                }
+
+                Handle = GL.CreateProgram();
+
+                GL.AttachShader(Handle, vertexShader);
+                GL.AttachShader(Handle, fragmentShader);
+
+                GL.LinkProgram(Handle);
+
+                GL.DetachShader(Handle, vertexShader);
+                GL.DetachShader(Handle, fragmentShader);
+                GL.DeleteShader(fragmentShader);
+                GL.DeleteShader(vertexShader);
+
+                GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out var numberOfUniforms);
+
+                uniformLocations = new Dictionary<string, int>();
+
+                for (var i = 0; i < numberOfUniforms; i++)
+                {
+                    var key = GL.GetActiveUniform(Handle, i, out _, out _);
+                    var location = GL.GetUniformLocation(Handle, key);
+                    uniformLocations.Add(key, location);
+                }
+
             }
-
-            GL.CompileShader(fragmentShader);
-
-            string infoLogFrag = GL.GetShaderInfoLog(fragmentShader);
-            if (infoLogFrag != String.Empty)
+            catch(AccessViolationException e)
             {
-                Console.WriteLine(infoLogFrag);
-            }
-
-            Handle = GL.CreateProgram();
-
-            GL.AttachShader(Handle, vertexShader);
-            GL.AttachShader(Handle, fragmentShader);
-
-            GL.LinkProgram(Handle);
-
-            GL.DetachShader(Handle, vertexShader);
-            GL.DetachShader(Handle, fragmentShader);
-            GL.DeleteShader(fragmentShader);
-            GL.DeleteShader(vertexShader);
-
-            GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out var numberOfUniforms);
-
-            uniformLocations = new Dictionary<string, int>();
-
-            for (var i = 0; i < numberOfUniforms; i++)
-            {
-                var key = GL.GetActiveUniform(Handle, i, out _, out _);
-                var location = GL.GetUniformLocation(Handle, key);
-                uniformLocations.Add(key, location);
+                Console.WriteLine(e.ToString());
             }
         }
 
@@ -106,64 +115,73 @@ namespace PracaInzynierska
                 geometryShaderSource = reader.ReadToEnd();
             }
 
-            vertexShader = GL.CreateShader(ShaderType.VertexShader);
-            GL.ShaderSource(vertexShader, vertexShaderSource);
-
-            fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
-            GL.ShaderSource(fragmentShader, fragmentShaderSource);
-
-            geometryShader = GL.CreateShader(ShaderType.GeometryShader);
-            GL.ShaderSource(geometryShader, geometryShaderSource);
-
-            GL.CompileShader(vertexShader);
-
-            string infoLogVert = GL.GetShaderInfoLog(vertexShader);
-            if (infoLogVert != String.Empty)
+            try
             {
-                Console.WriteLine(infoLogVert);
+                vertexShader = GL.CreateShader(ShaderType.VertexShader);
+                GL.ShaderSource(vertexShader, vertexShaderSource);
+
+                fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
+                GL.ShaderSource(fragmentShader, fragmentShaderSource);
+
+                geometryShader = GL.CreateShader(ShaderType.GeometryShader);
+                GL.ShaderSource(geometryShader, geometryShaderSource);
+
+                GL.CompileShader(vertexShader);
+
+                string infoLogVert = GL.GetShaderInfoLog(vertexShader);
+                if (infoLogVert != String.Empty)
+                {
+                    Console.WriteLine(infoLogVert);
+                }
+
+                GL.CompileShader(fragmentShader);
+
+                string infoLogFrag = GL.GetShaderInfoLog(fragmentShader);
+                if (infoLogFrag != String.Empty)
+                {
+                    Console.WriteLine(infoLogFrag);
+                }
+
+                GL.CompileShader(geometryShader);
+
+                string infoLogGeom = GL.GetShaderInfoLog(geometryShader);
+                if (infoLogFrag != String.Empty)
+                {
+                    Console.WriteLine(infoLogFrag);
+                }
+
+                Handle = GL.CreateProgram();
+
+                GL.AttachShader(Handle, vertexShader);
+                GL.AttachShader(Handle, fragmentShader);
+                GL.AttachShader(Handle, geometryShader);
+
+                GL.LinkProgram(Handle);
+
+                GL.DetachShader(Handle, vertexShader);
+                GL.DetachShader(Handle, fragmentShader);
+                GL.DetachShader(Handle, geometryShader);
+                GL.DeleteShader(fragmentShader);
+                GL.DeleteShader(vertexShader);
+                GL.DeleteShader(geometryShader);
+
+                GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out var numberOfUniforms);
+
+                uniformLocations = new Dictionary<string, int>();
+
+                for (var i = 0; i < numberOfUniforms; i++)
+                {
+                    var key = GL.GetActiveUniform(Handle, i, out _, out _);
+                    var location = GL.GetUniformLocation(Handle, key);
+                    uniformLocations.Add(key, location);
+                }
+            }
+            catch (AccessViolationException e)
+            {
+                Console.WriteLine(e.ToString());
             }
 
-            GL.CompileShader(fragmentShader);
-
-            string infoLogFrag = GL.GetShaderInfoLog(fragmentShader);
-            if (infoLogFrag != String.Empty)
-            {
-                Console.WriteLine(infoLogFrag);
-            }
-
-            GL.CompileShader(geometryShader);
-
-            string infoLogGeom = GL.GetShaderInfoLog(geometryShader);
-            if (infoLogFrag != String.Empty)
-            {
-                Console.WriteLine(infoLogFrag);
-            }
-
-            Handle = GL.CreateProgram();
-
-            GL.AttachShader(Handle, vertexShader);
-            GL.AttachShader(Handle, fragmentShader);
-            GL.AttachShader(Handle, geometryShader);
-
-            GL.LinkProgram(Handle);
-
-            GL.DetachShader(Handle, vertexShader);
-            GL.DetachShader(Handle, fragmentShader);
-            GL.DetachShader(Handle, geometryShader);
-            GL.DeleteShader(fragmentShader);
-            GL.DeleteShader(vertexShader);
-            GL.DeleteShader(geometryShader);
-
-            GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out var numberOfUniforms);
-
-            uniformLocations = new Dictionary<string, int>();
-
-            for (var i = 0; i < numberOfUniforms; i++)
-            {
-                var key = GL.GetActiveUniform(Handle, i, out _, out _);
-                var location = GL.GetUniformLocation(Handle, key);
-                uniformLocations.Add(key, location);
-            }
+            
         }
 
         public void Dispose()
