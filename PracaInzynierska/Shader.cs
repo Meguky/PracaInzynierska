@@ -180,7 +180,6 @@ namespace PracaInzynierska
                 disposedValue = true;
             }
         }
-
         ~Shader()
         {
             GL.DeleteProgram(Handle);

@@ -14,12 +14,8 @@ namespace PracaInzynierska
 {
     class MainWindow : GameWindow
     {
-        int[] vertexBufferObject;
-        int[] vertexArrayObject;
-        int[] elementBufferObject;
-        Shader[] shader;
+        
 
-        private Shader[] normalsShader;
         private bool toggleNormals = false;
 
         Camera camera;
@@ -31,9 +27,9 @@ namespace PracaInzynierska
         private Vector3 lightPosition = new Vector3(50f, 100f, 50f);
         private float ambientStrength = 0.05f;
 
-        private uint resolution = 16;
-        private uint size = 5;
-        private uint meshCount = 30;
+        private uint resolution = 32;
+        private uint size = 10;
+        private uint renderDistance = 4;
 
         private MeshesController meshController;
 
@@ -41,19 +37,8 @@ namespace PracaInzynierska
 
         protected override void OnLoad(EventArgs e)
         {
-            vertexBufferObject = new int[meshCount];
-            vertexArrayObject = new int[meshCount];
-            elementBufferObject = new int[meshCount];
 
-            shader = new Shader[meshCount];
-            normalsShader = new Shader[meshCount];
-
-            for (int i = 0; i < meshCount; i++)
-            {
-                vertexArrayObject[i] = GL.GenVertexArray();
-            }
-
-            
+            camera = new Camera(Vector3.UnitZ * 30, Width / (float)Height);
 
             GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
@@ -64,48 +49,9 @@ namespace PracaInzynierska
             log.WriteToConsole("Mesh resolution: " + resolution);
             log.WriteToConsole("Mesh tris: " + mesh.getIndices().Length/3.0f);
             log.WriteToConsole("Normals: " + (toggleNormals ? "ON" : "OFF"));*/
-            meshController = new MeshesController(resolution, size, 3, camera);
+            meshController = new MeshesController(resolution, size, renderDistance, camera);
 
-            for (int i = 0; i < meshCount; i++)
-            {
-                vertexBufferObject[i] = GL.GenBuffer();
-                GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferObject[i]);
-                GL.BufferData(BufferTarget.ArrayBuffer, meshController.meshes[i].getVerticesData().Length * Marshal.SizeOf(typeof(Vector3)), meshController.meshes[i].getVerticesData(), BufferUsageHint.StaticDraw);
-
-                elementBufferObject[i] = GL.GenBuffer();
-                GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject[i]);
-                GL.BufferData(BufferTarget.ElementArrayBuffer,  meshController.meshes[i].getIndices().Length * sizeof(uint), meshController.meshes[i].getIndices(), BufferUsageHint.StaticDraw);
-
-                shader[i] = new Shader("../../Shaders/shader.vert", "../../Shaders/shader.frag");
-                normalsShader[i] = new Shader("../../Shaders/normalsShader.vert", "../../Shaders/normalsShader.frag", "../../Shaders/normalsShader.geom");
-
-                shader[i].Use();
-
-                GL.BindVertexArray(vertexArrayObject[i]);
-                GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject[i]);
-
-                GL.EnableVertexAttribArray(shader[i].GetAttribLocation("aPosition"));
-                GL.VertexAttribPointer(shader[i].GetAttribLocation("aPosition"), 3, VertexAttribPointerType.Float, false, sizeof(float) * 9, 0);
-
-                GL.EnableVertexAttribArray(shader[i].GetAttribLocation("aNormal"));
-                GL.VertexAttribPointer(shader[i].GetAttribLocation("aNormal"), 3, VertexAttribPointerType.Float, false, sizeof(float) * 9, sizeof(float) * 3);
-
-                GL.EnableVertexAttribArray(shader[i].GetAttribLocation("aColor"));
-                GL.VertexAttribPointer(shader[i].GetAttribLocation("aColor"), 3, VertexAttribPointerType.Float, false, sizeof(float) * 9, sizeof(float) * 6);
-
-                //INIT NORMALS SHADER
-                normalsShader[i].Use();
-
-                GL.EnableVertexAttribArray(normalsShader[i].GetAttribLocation("aPosition"));
-                GL.VertexAttribPointer(normalsShader[i].GetAttribLocation("aPosition"), 3, VertexAttribPointerType.Float, false, sizeof(float) * 9, 0);
-
-                GL.EnableVertexAttribArray(normalsShader[i].GetAttribLocation("aNormal"));
-                GL.VertexAttribPointer(normalsShader[i].GetAttribLocation("aNormal"), 3, VertexAttribPointerType.Float, false, sizeof(float) * 9, sizeof(float) * 3);
-            }
-
-            GL.BindVertexArray(0);
-
-            camera = new Camera(Vector3.UnitZ * 3, Width / (float)Height);
+            
 
             CursorVisible = false;
             
@@ -118,40 +64,7 @@ namespace PracaInzynierska
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            for (int i = 0; i < meshCount; i++)
-            {
-
-                shader[i].SetMatrix4("model", Matrix4.Identity);
-                normalsShader[i].SetMatrix4("model", Matrix4.Identity);
-
-                GL.BindVertexArray(vertexArrayObject[i]);
-
-
-
-                shader[i].Use();
-                GL.DrawElements(PrimitiveType.Triangles, meshController.meshes[i].getIndices().Length, DrawElementsType.UnsignedInt, 0);
-                shader[i].SetVector3("lightColor", ambientLightColor);
-                shader[i].SetFloat("ambientStrength", ambientStrength);
-                shader[i].SetVector3("lightPos", lightPosition);
-
-
-                if (toggleNormals)
-                {
-
-                    normalsShader[i].Use();
-                    GL.DrawElements(PrimitiveType.Triangles, meshController.meshes[i].getIndices().Length, DrawElementsType.UnsignedInt, 0);
-
-
-                }
-
-
-                shader[i].SetMatrix4("view", camera.GetViewMatrix());
-                shader[i].SetMatrix4("projection", camera.GetProjectionMatrix());
-
-                normalsShader[i].SetMatrix4("view", camera.GetViewMatrix());
-                normalsShader[i].SetMatrix4("projection", camera.GetProjectionMatrix());
-            }
-
+            meshController.drawAllMeshes(toggleNormals, ambientLightColor, ambientStrength, lightPosition);
 
             Title = "Generacja terenu " + (1f / e.Time).ToString("0.") + " FPS";
 
@@ -250,20 +163,12 @@ namespace PracaInzynierska
         protected override void OnUnload(EventArgs e)
         {
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-            for (int i = 0; i < meshCount; i++)
-            {
-                GL.DeleteBuffer(vertexBufferObject[i]);
-                GL.DeleteVertexArray(vertexArrayObject[i]);
-                GL.DeleteShader(shader[i].Handle);
-                GL.DeleteShader(normalsShader[i].Handle);
-                shader[i].Dispose();
-                normalsShader[i].Dispose();
-            }
-            
-            GL.BindVertexArray(0);
-            
+
+            meshController.deleteMeshesGLData();
+
             GL.UseProgram(0);
-            
+            GL.BindVertexArray(0);
+
             base.OnUnload(e);
         }
     }
