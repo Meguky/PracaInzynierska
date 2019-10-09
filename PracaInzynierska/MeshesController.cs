@@ -14,16 +14,17 @@ namespace PracaInzynierska
     {
 
         public List<Mesh> meshes;
+        public List<Mesh> meshesToAdd;
         private uint renderDistance;
         private uint meshResolution;
         private uint meshSize;
         private Camera camera;
         public List<Vector3> meshesOriginPointGrid;
-        public List<Vector3> lastMeshesOriginPointGrid;
-        public List<Vector3> meshesToAddOriginPoints;
         private bool active = true;
         private Shader shader;
         private Shader normalsShader;
+
+        private long openSimplexNoiseSeed = 0934580934580934509;
 
         public MeshesController(uint _meshResolution, uint _meshSize, uint _renderDistance, Camera _camera)
         {
@@ -33,26 +34,14 @@ namespace PracaInzynierska
             meshSize = _meshSize;
 
             meshes = new List<Mesh>();
-            lastMeshesOriginPointGrid = new List<Vector3>();
+            meshesToAdd = new List<Mesh>();
             meshesOriginPointGrid = new List<Vector3>();
-            meshesToAddOriginPoints = new List<Vector3>();
+
 
             shader = new Shader("../../Shaders/shader.vert", "../../Shaders/shader.frag");
             normalsShader = new Shader("../../Shaders/normalsShader.vert", "../../Shaders/normalsShader.frag", "../../Shaders/normalsShader.geom");
 
-            generateGrid();
-
-            Mesh mesh;
-            OpenSimplexNoise n = new OpenSimplexNoise();
-
-            for (int i = 0; i < meshesOriginPointGrid.Count; i++)
-            {
-                mesh = new Mesh(meshResolution, meshSize, meshesOriginPointGrid[i], new Vector3(1.0f, 1.0f, 1.0f), shader, normalsShader);
-                mesh.generateMesh();
-                float[] noiseValues = n.getNoise(mesh.getVertices(), 0.5f, 0);
-                mesh.applyNoise(noiseValues);
-                meshes.Add(mesh);
-            }
+            //generateGrid();
 
             //Thread t = new Thread(new ThreadStart(generationLoop));
             //t.Start();
@@ -64,7 +53,8 @@ namespace PracaInzynierska
             {
                 Console.Write("Generating meshes...");
                 generateGrid();
-                Thread.Sleep(5000);
+                
+                Thread.Sleep(100);
             }
         }
 
@@ -103,55 +93,41 @@ namespace PracaInzynierska
                 }
             }
 
-            if (lastMeshesOriginPointGrid.Count != 0 && !lastMeshesOriginPointGrid.SequenceEqual(meshesOriginPointGrid))
-            {
-                foreach (Vector3 lastPoint in meshesOriginPointGrid)
-                {
-                    bool isInCollection = false;
-                    for (int i = 0; i < lastMeshesOriginPointGrid.Count; i++)
-                    {
-                        if (lastMeshesOriginPointGrid[i] == lastPoint)
-                        {
-                            isInCollection = true;
-                            break;
-                        }
-                    }
+            bool meshIsOnMap = false;
+            OpenSimplexNoise n = new OpenSimplexNoise(openSimplexNoiseSeed);
 
-                    if (!isInCollection)
+            for (int i = 0; i < meshesOriginPointGrid.Count; i++)
+            {
+                foreach (Mesh mesh in meshes)
+                {
+                    meshIsOnMap = false;
+
+                    if (mesh.originPoint == meshesOriginPointGrid[i])
                     {
-                        meshesToAddOriginPoints.Add(lastPoint);
-                        Console.WriteLine(meshesToAddOriginPoints.Count);
+                        meshIsOnMap = true;
+                        break;
                     }
                 }
 
-                
-                applyMeshes();
-            }
-
-            lastMeshesOriginPointGrid.Clear();
-
-            foreach (Vector3 point in meshesOriginPointGrid)
-            {
-                lastMeshesOriginPointGrid.Add(point);
+                if (!meshIsOnMap)
+                {
+                    Mesh meshToAdd = new Mesh(meshResolution, meshSize, meshesOriginPointGrid[i], new Vector3(1.0f, 1.0f, 1.0f), shader, normalsShader);
+                    meshToAdd.generateMesh();
+                    float[] noiseValues = n.getNoise(meshToAdd.getVertices(), 0.5f);
+                    meshToAdd.applyNoise(noiseValues);
+                    meshesToAdd.Add(meshToAdd);
+                }
             }
 
         }
 
-        private void applyMeshes()
+        public void applyMeshes()
         {
-            Mesh mesh;
-            OpenSimplexNoise n = new OpenSimplexNoise();
-
-            for (int i = meshesOriginPointGrid.Count - 1; i > 0; i--)
+            for (int i = 0; i < meshesToAdd.Count; i++)
             {
-                mesh = new Mesh(meshResolution, meshSize, meshesOriginPointGrid[i], new Vector3(1.0f, 1.0f, 1.0f), shader, normalsShader);
-                mesh.generateMesh();
-                float[] noiseValues = n.getNoise(mesh.getVertices(), 0.5f, 0);
-                mesh.applyNoise(noiseValues);
-                meshes.Add(mesh);
-                
+                meshes.Add(meshesToAdd[i]);
             }
-            meshesOriginPointGrid.Clear();
+            meshesToAdd.Clear();
         }
 
         public void drawAllMeshes(bool toggleNormals, Vector3 ambientLightColor, float ambientStrength, Vector3 lightPosition)

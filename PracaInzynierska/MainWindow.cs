@@ -30,7 +30,7 @@ namespace PracaInzynierska
 
         private uint resolution = 32;
         private uint size = 10;
-        private uint renderDistance = 5;
+        private uint renderDistance = 10;
 
         private MeshesController meshController;
 
@@ -50,6 +50,8 @@ namespace PracaInzynierska
             log.WriteToConsole("Mesh resolution: " + resolution);
             log.WriteToConsole("Mesh tris: " + mesh.getIndices().Length/3.0f);
             log.WriteToConsole("Normals: " + (toggleNormals ? "ON" : "OFF"));*/
+
+            
 
             meshController = new MeshesController(resolution, size, renderDistance, camera);
 
@@ -96,21 +98,45 @@ namespace PracaInzynierska
             }
 
             if (input.IsKeyDown(Key.W))
-                camera.Position += camera.front * camera.speed * (float)e.Time; 
+            {
+                camera.Position += camera.front * camera.speed * (float)e.Time;
+                lightPosition.Xz = camera.Position.Xz;
+            }
+
             if (input.IsKeyDown(Key.S))
+            {
                 camera.Position -= camera.front * camera.speed * (float)e.Time;
+                lightPosition.Xz = camera.Position.Xz;
+            }
+
             if (input.IsKeyDown(Key.A))
+            {
                 camera.Position -= camera.right * camera.speed * (float)e.Time;
+                lightPosition.Xz = camera.Position.Xz;
+            }
+
             if (input.IsKeyDown(Key.D))
+            {
                 camera.Position += camera.right * camera.speed * (float)e.Time;
+                lightPosition.Xz = camera.Position.Xz;
+            }
+
             if (input.IsKeyDown(Key.Space))
+            {
                 camera.Position += camera.up * camera.speed * (float)e.Time;
+                lightPosition.Xz = camera.Position.Xz;
+            }
+                
             if (input.IsKeyDown(Key.LShift))
+            {
                 camera.Position -= camera.up * camera.speed * (float)e.Time;
+                lightPosition.Xz = camera.Position.Xz;
+            }
+                
             if (input.IsKeyDown(Key.E))
-                camera.speed = MathHelper.Clamp(camera.speed + 0.1f, 0, 10) ;
+                camera.speed = MathHelper.Clamp(camera.speed + 0.1f, 0, 20) ;
             if (input.IsKeyDown(Key.Q))
-                camera.speed = MathHelper.Clamp(camera.speed - 0.1f, 0, 10);
+                camera.speed = MathHelper.Clamp(camera.speed - 0.1f, 0, 20);
             if (input.IsKeyDown(Key.G))
                 GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
             if (input.IsKeyDown(Key.B))
@@ -133,11 +159,22 @@ namespace PracaInzynierska
                 camera.Pitch -= deltaY * camera.sensitivity;
             }
 
-            meshController.generateGrid();
+            checkForNewMeshes();
 
             base.OnUpdateFrame(e);
         }
 
+        private void checkForNewMeshes()
+        {
+            
+            meshController.generateGrid();
+            Console.WriteLine("MainThread: " + meshController.meshesToAdd.Count);
+            if (meshController.meshesToAdd.Count > 0)
+            {
+                meshController.applyMeshes();
+            }
+            
+        }
         protected override void OnKeyDown(KeyboardKeyEventArgs e)
         {
             KeyboardState input = Keyboard.GetState();

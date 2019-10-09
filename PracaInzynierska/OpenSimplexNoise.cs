@@ -160,7 +160,7 @@ namespace PracaInzynierska
             }
         }
 
-        public float[] getNoise(Vector3[] vertices, float amplitude, float offset)
+        public float[] getNoise(Vector3[] vertices, float amplitude)
         {
             float[] n = new float[vertices.Length];
 
