@@ -25,15 +25,15 @@ namespace PracaInzynierska
         Vector2 lastPos;
 
         Vector3 ambientLightColor = new Vector3(1f,1f,1f);
-        private Vector3 lightPosition = new Vector3(50f, 100f, 50f);
+        private Vector3 lightPosition = new Vector3(50f, 1000f, 50f);
         private float ambientStrength = 0.05f;
 
         private uint resolution = 32;
         private uint size = 10;
-        private uint renderDistance = 10;
+        private uint renderDistance = 5;
 
         private MeshesController meshController;
-
+        private ConsoleLogger log;
         public MainWindow(int width, int height, string title) : base(width,height,GraphicsMode.Default, title) { }
 
         protected override void OnLoad(EventArgs e)
@@ -46,14 +46,8 @@ namespace PracaInzynierska
             GL.Enable(EnableCap.DepthTest);
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
 
-            /*log.WriteToConsole("Mesh size: " + size);
-            log.WriteToConsole("Mesh resolution: " + resolution);
-            log.WriteToConsole("Mesh tris: " + mesh.getIndices().Length/3.0f);
-            log.WriteToConsole("Normals: " + (toggleNormals ? "ON" : "OFF"));*/
-
-            
-
             meshController = new MeshesController(resolution, size, renderDistance, camera);
+            log = new ConsoleLogger(meshController);
 
             CursorVisible = false;
             
@@ -166,22 +160,78 @@ namespace PracaInzynierska
 
         private void checkForNewMeshes()
         {
-            
-            meshController.generateGrid();
-            Console.WriteLine("MainThread: " + meshController.meshesToAdd.Count);
-            if (meshController.meshesToAdd.Count > 0)
-            {
-                meshController.applyMeshes();
-            }
+            //meshController.generateGrid();
+            meshController.applyMeshes();
             
         }
+
         protected override void OnKeyDown(KeyboardKeyEventArgs e)
         {
             KeyboardState input = Keyboard.GetState();
 
-            if (input.IsKeyDown(Key.N))
+            if (input.IsKeyDown(Key.M))
             {
                 toggleNormals = !toggleNormals;
+            }
+
+            if (input.IsKeyDown(Key.Z))
+            {
+                if (input.IsKeyDown(Key.AltLeft))
+                {
+                    resolution = (uint)MathHelper.Clamp(resolution -= 100, 1, 1024);
+                }else
+                if (input.IsKeyDown(Key.ControlLeft))
+                {
+                    resolution = (uint)MathHelper.Clamp( resolution -= 10, 1, 1024);
+                }
+                else
+                {
+                    resolution = (uint)MathHelper.Clamp(resolution--, 1, 1024);
+                }
+
+                meshController.changeResolution(resolution);
+            }
+
+            if (input.IsKeyDown(Key.X))
+            {
+                if (input.IsKeyDown(Key.AltLeft))
+                {
+                    resolution = (uint)MathHelper.Clamp(resolution += 100, 1, 1024);
+                }else
+                if (input.IsKeyDown(Key.ControlLeft))
+                {
+                    resolution = (uint)MathHelper.Clamp(resolution += 10, 1, 1024);
+                }
+                else
+                {
+                    resolution = (uint)MathHelper.Clamp(resolution++, 1, 1024);
+                }
+
+                meshController.changeResolution(resolution);
+            }
+
+            if (input.IsKeyDown(Key.C))
+            {
+                renderDistance = (uint)MathHelper.Clamp(renderDistance--, 1, 20);
+                meshController.changeRenderDistance(renderDistance);
+            }
+
+            if (input.IsKeyDown(Key.V))
+            {
+                renderDistance = (uint)MathHelper.Clamp(renderDistance++, 1, 20);
+                meshController.changeRenderDistance(renderDistance);
+            }
+
+            if (input.IsKeyDown(Key.B))
+            {
+                size = (uint)MathHelper.Clamp(size--, 1, 1000);
+                meshController.changeSize(size);
+            }
+
+            if (input.IsKeyDown(Key.N))
+            {
+                size = (uint)MathHelper.Clamp(size++, 1, 1000);
+                meshController.changeSize(size);
             }
 
             base.OnKeyDown(e);
@@ -201,7 +251,7 @@ namespace PracaInzynierska
         {
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
             meshController.deleteMeshesGLData();
-
+            log.active = false;
             GL.UseProgram(0);
             GL.BindVertexArray(0);
 

@@ -27,6 +27,7 @@ namespace PracaInzynierska
         int elementBufferObject;
         Shader shader;
         Shader normalsShader;
+        private bool firstDraw;
 
         private uint Resolution { get; set; }
         private uint Size { get; set; }
@@ -45,6 +46,8 @@ namespace PracaInzynierska
             originPoint = _origin;
             shader = _shader;
             normalsShader = _normalsShader;
+
+            firstDraw = true;
 
             vertices = new Vector3[(Resolution + 1) * (Resolution + 1)];
 
@@ -70,8 +73,6 @@ namespace PracaInzynierska
 
             generateMesh();
 
-            bindBuffers();
-            
         }
 
         public void generateMesh()
@@ -164,7 +165,6 @@ namespace PracaInzynierska
 
             calculateNormals();
 
-            bindBuffers(false);
         }
 
         public void addNoise(float[] noise, float strength)
@@ -181,12 +181,16 @@ namespace PracaInzynierska
             }
 
             calculateNormals();
-
-            bindBuffers(false);
         }
 
         public void draw(bool normalsActive, Vector3 ambientLightColor, float ambientStrength, Vector3 lightPosition, Camera camera)
         {
+            if (firstDraw)
+            {
+                bindBuffers();
+                firstDraw = false;
+            }
+            
 
             shader.SetMatrix4("model", Matrix4.Identity);
             normalsShader.SetMatrix4("model", Matrix4.Identity);
@@ -207,11 +211,8 @@ namespace PracaInzynierska
 
             if (normalsActive)
             {
-
                 normalsShader.Use();
                 GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
-
-
             }
 
             GL.BindVertexArray(0);
@@ -228,17 +229,10 @@ namespace PracaInzynierska
             return indices;
         }
 
-        private void bindBuffers(bool firstGeneration = true)
+        private void bindBuffers()
         {
             try
             {
-                if (!firstGeneration)
-                {
-                    GL.DeleteBuffer(vertexBufferObject);
-                    GL.DeleteBuffer(elementBufferObject);
-                    GL.DeleteVertexArray(vertexArrayObject);
-                }
-
                 vertexArrayObject = GL.GenVertexArray();
                 vertexBufferObject = GL.GenBuffer();
                 elementBufferObject = GL.GenBuffer();
@@ -290,8 +284,12 @@ namespace PracaInzynierska
 
         public void deleteGLStructures()
         {
-            GL.DeleteBuffer(vertexBufferObject);
-            GL.DeleteVertexArray(vertexArrayObject);
+            if (!firstDraw)
+            {
+                GL.DeleteBuffer(vertexBufferObject);
+                GL.DeleteBuffer(elementBufferObject);
+                GL.DeleteVertexArray(vertexArrayObject);
+            }
             GL.DeleteShader(shader.Handle);
             GL.DeleteShader(normalsShader.Handle);
             shader.Dispose();

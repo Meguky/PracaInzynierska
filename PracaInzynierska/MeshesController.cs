@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -15,17 +16,19 @@ namespace PracaInzynierska
 
         public List<Mesh> meshes;
         public List<Mesh> meshesToAdd;
-        private uint renderDistance;
-        private uint meshResolution;
-        private uint meshSize;
-        private Camera camera;
-        public List<Vector3> meshesOriginPointGrid;
-        private bool active = true;
+        public List<Mesh> meshesToDelete;
+        public uint renderDistance;
+        public uint meshResolution;
+        public uint meshSize;
+        public Camera camera;
+        public bool active = true;
+        private List<Vector3> meshesOriginPointGrid;
         private Shader shader;
         private Shader normalsShader;
+        private readonly object meshesLock = new object();
 
         private long openSimplexNoiseSeed = 0934580934580934509;
-
+        private Thread generationThread;
         public MeshesController(uint _meshResolution, uint _meshSize, uint _renderDistance, Camera _camera)
         {
             renderDistance = _renderDistance;
@@ -35,26 +38,74 @@ namespace PracaInzynierska
 
             meshes = new List<Mesh>();
             meshesToAdd = new List<Mesh>();
+            meshesToDelete = new List<Mesh>();
             meshesOriginPointGrid = new List<Vector3>();
-
 
             shader = new Shader("../../Shaders/shader.vert", "../../Shaders/shader.frag");
             normalsShader = new Shader("../../Shaders/normalsShader.vert", "../../Shaders/normalsShader.frag", "../../Shaders/normalsShader.geom");
 
-            //generateGrid();
-
-            //Thread t = new Thread(new ThreadStart(generationLoop));
-            //t.Start();
+            generationThread = new Thread(new ThreadStart(generationLoop));
+            generationThread.Start();
 
         }
+
+        public void changeResolution(uint _resolution)
+        {
+            active = false;
+            generationThread.Join();
+
+            deleteMeshesGLData();
+
+            meshResolution = _resolution;
+
+            initAfterParameterChange();
+        }
+
+        public void changeRenderDistance(uint _renderDistance)
+        {
+            active = false;
+            generationThread.Join();
+
+            deleteMeshesGLData();
+
+            renderDistance = _renderDistance;
+
+            initAfterParameterChange();
+        }
+
+        public void changeSize(uint _size)
+        {
+            active = false;
+            generationThread.Join();
+
+            deleteMeshesGLData();
+
+            meshSize = _size;
+
+            initAfterParameterChange();
+        }
+
+        private void initAfterParameterChange()
+        {
+            meshes = new List<Mesh>();
+            meshesToAdd = new List<Mesh>();
+            meshesToDelete = new List<Mesh>();
+            meshesOriginPointGrid = new List<Vector3>();
+
+            active = true;
+
+            generationThread = new Thread(new ThreadStart(generationLoop));
+            generationThread.Start();
+        }
+
         private void generationLoop()
         {
             while (active)
             {
-                Console.Write("Generating meshes...");
                 generateGrid();
-                
-                Thread.Sleep(100);
+                generateMeshes();
+                generateDeleteGrid();
+                Thread.Sleep(1000);
             }
         }
 
@@ -83,8 +134,6 @@ namespace PracaInzynierska
 
             Vector3 cameraNearestMesh = new Vector3( cameraOffsetX, camera.Position.Y, cameraOffsetZ);
 
-            meshesOriginPointGrid.Clear();
-
             for (int i = 0; i < renderDistance; i++)
             {
                 for (int j = 0; j < renderDistance; j++)
@@ -92,20 +141,26 @@ namespace PracaInzynierska
                     meshesOriginPointGrid.Add(new Vector3((j * meshSize) - meshSize * renderDistance / 2 + cameraNearestMesh.X, 0, (i * meshSize) - meshSize * renderDistance / 2 + cameraNearestMesh.Z));
                 }
             }
+        }
 
+        public void generateMeshes()
+        {
             bool meshIsOnMap = false;
             OpenSimplexNoise n = new OpenSimplexNoise(openSimplexNoiseSeed);
 
             for (int i = 0; i < meshesOriginPointGrid.Count; i++)
             {
-                foreach (Mesh mesh in meshes)
+                lock (meshesLock)
                 {
-                    meshIsOnMap = false;
-
-                    if (mesh.originPoint == meshesOriginPointGrid[i])
+                    foreach (Mesh mesh in meshes)
                     {
-                        meshIsOnMap = true;
-                        break;
+                        meshIsOnMap = false;
+
+                        if (mesh.originPoint == meshesOriginPointGrid[i])
+                        {
+                            meshIsOnMap = true;
+                            break;
+                        }
                     }
                 }
 
@@ -119,15 +174,35 @@ namespace PracaInzynierska
                 }
             }
 
+            meshesOriginPointGrid.Clear();
+        }
+
+        public void generateDeleteGrid()
+        {
+            lock (meshesLock)
+            {
+                meshesToDelete = meshes.Where(mesh => (mesh.middlePoint - camera.Position).Length > (float) meshSize * renderDistance).ToList();
+            }
         }
 
         public void applyMeshes()
         {
-            for (int i = 0; i < meshesToAdd.Count; i++)
+            lock (meshesLock)
             {
-                meshes.Add(meshesToAdd[i]);
+                for (int i = 0; i < meshesToDelete.Count; i++)
+                {
+                    meshesToDelete[i].deleteGLStructures();
+                    meshes.Find(mesh => mesh == meshesToDelete[i]).deleteGLStructures();
+                    meshes.Remove(meshesToDelete[i]);
+                }
+                
+                for (int i = 0; i < meshesToAdd.Count; i++)
+                {
+                    meshes.Add(meshesToAdd[i]);
+                }
             }
             meshesToAdd.Clear();
+            meshesToDelete.Clear();
         }
 
         public void drawAllMeshes(bool toggleNormals, Vector3 ambientLightColor, float ambientStrength, Vector3 lightPosition)
