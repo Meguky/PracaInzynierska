@@ -133,7 +133,7 @@ namespace PracaInzynierska
                 camera.speed = MathHelper.Clamp(camera.speed - 0.1f, 0, 20);
             if (input.IsKeyDown(Key.G))
                 GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
-            if (input.IsKeyDown(Key.B))
+            if (input.IsKeyDown(Key.H))
                 GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
 
             var mouse = Mouse.GetState();
@@ -160,7 +160,6 @@ namespace PracaInzynierska
 
         private void checkForNewMeshes()
         {
-            //meshController.generateGrid();
             meshController.applyMeshes();
             
         }
@@ -212,25 +211,25 @@ namespace PracaInzynierska
 
             if (input.IsKeyDown(Key.C))
             {
-                renderDistance = (uint)MathHelper.Clamp(renderDistance--, 1, 20);
+                renderDistance = (uint)MathHelper.Clamp(renderDistance -= 1, 1, 20);
                 meshController.changeRenderDistance(renderDistance);
             }
 
             if (input.IsKeyDown(Key.V))
             {
-                renderDistance = (uint)MathHelper.Clamp(renderDistance++, 1, 20);
+                renderDistance = (uint)MathHelper.Clamp(renderDistance += 1, 1, 20);
                 meshController.changeRenderDistance(renderDistance);
             }
 
             if (input.IsKeyDown(Key.B))
             {
-                size = (uint)MathHelper.Clamp(size--, 1, 1000);
+                size = (uint)MathHelper.Clamp(size -= 10, 1, 1000);
                 meshController.changeSize(size);
             }
 
             if (input.IsKeyDown(Key.N))
             {
-                size = (uint)MathHelper.Clamp(size++, 1, 1000);
+                size = (uint)MathHelper.Clamp(size +=10, 1, 1000);
                 meshController.changeSize(size);
             }
 

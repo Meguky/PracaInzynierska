@@ -26,6 +26,7 @@ namespace PracaInzynierska
         private Shader shader;
         private Shader normalsShader;
         private readonly object meshesLock = new object();
+        private readonly object renderDistanceLock = new object();
 
         private long openSimplexNoiseSeed = 0934580934580934509;
         private Thread generationThread;
@@ -61,18 +62,6 @@ namespace PracaInzynierska
             initAfterParameterChange();
         }
 
-        public void changeRenderDistance(uint _renderDistance)
-        {
-            active = false;
-            generationThread.Join();
-
-            deleteMeshesGLData();
-
-            renderDistance = _renderDistance;
-
-            initAfterParameterChange();
-        }
-
         public void changeSize(uint _size)
         {
             active = false;
@@ -83,6 +72,14 @@ namespace PracaInzynierska
             meshSize = _size;
 
             initAfterParameterChange();
+        }
+
+        public void changeRenderDistance(uint _renderDistance)
+        {
+            lock (renderDistanceLock)
+            {
+                renderDistance = _renderDistance;
+            }
         }
 
         private void initAfterParameterChange()
@@ -134,11 +131,17 @@ namespace PracaInzynierska
 
             Vector3 cameraNearestMesh = new Vector3( cameraOffsetX, camera.Position.Y, cameraOffsetZ);
 
-            for (int i = 0; i < renderDistance; i++)
+            uint gridRenderDistance;
+            lock (renderDistanceLock)
             {
-                for (int j = 0; j < renderDistance; j++)
+                gridRenderDistance = renderDistance + 2;
+            }
+
+            for (int i = 0; i < gridRenderDistance; i++)
+            {
+                for (int j = 0; j < gridRenderDistance; j++)
                 {
-                    meshesOriginPointGrid.Add(new Vector3((j * meshSize) - meshSize * renderDistance / 2 + cameraNearestMesh.X, 0, (i * meshSize) - meshSize * renderDistance / 2 + cameraNearestMesh.Z));
+                    meshesOriginPointGrid.Add(new Vector3((j * meshSize) - meshSize * gridRenderDistance / 2 + cameraNearestMesh.X, 0, (i * meshSize) - meshSize * gridRenderDistance / 2 + cameraNearestMesh.Z));
                 }
             }
         }
@@ -164,7 +167,7 @@ namespace PracaInzynierska
                     }
                 }
 
-                if (!meshIsOnMap)
+                if (!meshIsOnMap && (meshesOriginPointGrid[i] - camera.Position).Length < (float) meshSize * renderDistance)
                 {
                     Mesh meshToAdd = new Mesh(meshResolution, meshSize, meshesOriginPointGrid[i], new Vector3(1.0f, 1.0f, 1.0f), shader, normalsShader);
                     meshToAdd.generateMesh();
