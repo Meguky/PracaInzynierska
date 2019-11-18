@@ -12,7 +12,10 @@ uniform float ambientStrength;
 
 void main()
 {
-	vec3 norm = normalize(Normal);
+	vec3 xTangent = dFdx( FragPos );
+	vec3 yTangent = dFdy( FragPos );
+	
+	vec3 norm = normalize(cross(xTangent, yTangent));
 	vec3 lightDir = normalize(lightPos - FragPos);
 
 	float diff = dot(norm, lightDir);
