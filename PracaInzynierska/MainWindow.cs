@@ -24,8 +24,8 @@ namespace PracaInzynierska
         bool firstMove = true;
         Vector2 lastPos;
 
-        Vector3 ambientLightColor = new Vector3(1f,1f,1f);
-        private Vector3 lightPosition = new Vector3(50f, 1000f, 50f);
+        Vector3 ambientLightColor = new Vector3(0.8f,1f,0.6f);
+        private Vector3 lightPosition = new Vector3(50f, 100f, 50f);
         private float ambientStrength = 0.05f;
 
         private uint resolution = 32;
@@ -94,37 +94,37 @@ namespace PracaInzynierska
             if (input.IsKeyDown(Key.W))
             {
                 camera.Position += camera.front * camera.speed * (float)e.Time;
-                lightPosition.Xz = camera.Position.Xz;
+                //lightPosition.Xz = camera.Position.Xz;
             }
 
             if (input.IsKeyDown(Key.S))
             {
                 camera.Position -= camera.front * camera.speed * (float)e.Time;
-                lightPosition.Xz = camera.Position.Xz;
+                //lightPosition.Xz = camera.Position.Xz;
             }
 
             if (input.IsKeyDown(Key.A))
             {
                 camera.Position -= camera.right * camera.speed * (float)e.Time;
-                lightPosition.Xz = camera.Position.Xz;
+                //lightPosition.Xz = camera.Position.Xz;
             }
 
             if (input.IsKeyDown(Key.D))
             {
                 camera.Position += camera.right * camera.speed * (float)e.Time;
-                lightPosition.Xz = camera.Position.Xz;
+                //lightPosition.Xz = camera.Position.Xz;
             }
 
             if (input.IsKeyDown(Key.Space))
             {
                 camera.Position += camera.up * camera.speed * (float)e.Time;
-                lightPosition.Xz = camera.Position.Xz;
+                //lightPosition.Xz = camera.Position.Xz;
             }
                 
             if (input.IsKeyDown(Key.LShift))
             {
                 camera.Position -= camera.up * camera.speed * (float)e.Time;
-                lightPosition.Xz = camera.Position.Xz;
+                //lightPosition.Xz = camera.Position.Xz;
             }
                 
             if (input.IsKeyDown(Key.E))

@@ -4,9 +4,11 @@ using OpenTK.Graphics.OpenGL4;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Vector3 = OpenTK.Vector3;
 
 namespace PracaInzynierska
 {
@@ -57,10 +59,13 @@ namespace PracaInzynierska
 
             verticesData = new Vector3[vertices.Length, 3];
 
+            Random rand = new Random();
+
             for (int i = 0; i < colors.Length; i++)
             {
-                colors[i] = _color;
-                verticesData[i, 2] = _color;
+                Vector3 localColor = new Vector3(MathHelper.Clamp((float)rand.NextDouble(), 0.1f, 0.5f), 1.0f, MathHelper.Clamp((float)rand.NextDouble(),0.1f,0.5f));
+                colors[i] = localColor;
+                verticesData[i, 2] = localColor;
             }
 
             indices = new uint[Resolution * Resolution * 2 * 3];
